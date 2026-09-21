@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Lecteur</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main class="lecteur">
+
+        <a href="javascript:history.back()" class="retour retour-cache">
+    ← Retour
+</a>
+
+        <div class="lecteur-principal">
+
+            <!-- PARTIE GAUCHE : LECTEUR -->
+            <section class="zone-lecture">
+
+                <div class="disque">
+                    <img id="pochette" src="" alt="">
+                    <div class="centre-disque"></div>
+                </div>
+
+                <div class="informations-lecture">
+
+                    <p id="artiste-actuel" class="artiste-actuel"></p>
+
+                    <h1 id="titre-album"></h1>
+
+<a id="lien-version" class="lien-version"></a>
+
+<div class="titre-morceau-actuel">
+
+    <h2 id="morceau-actuel">
+        Aucun morceau sélectionné
+    </h2>
+
+    <button id="paroles-actuelles" class="paroles-actuelles" title="Afficher les paroles">
+        🎤
+    </button>
+
+</div>
+
+                </div>
+
+                <div class="progression">
+
+                    <div class="barre-progression">
+                        <div id="progression" class="progression-actuelle"></div>
+                    </div>
+
+                    <div class="temps">
+                        <span id="temps-actuel">0:00</span>
+                        <span id="duree-totale">0:00</span>
+                    </div>
+
+                </div>
+
+                <audio id="audio"></audio>
+
+                <div class="commandes">
+
+                    <button id="precedent" title="Titre précédent">
+                        ⏮
+                    </button>
+
+                    <button id="lecture-pause" title="Lecture / Pause">
+                        ▶
+                    </button>
+
+                    <button id="stop" title="Stop">
+                        ⏹
+                    </button>
+
+                    <button id="suivant" title="Titre suivant">
+                        ⏭
+                    </button>
+
+                    <button id="aleatoire" title="Lecture aléatoire">
+    ⇄
+</button>
+
+<button id="repetition" title="Répétition">
+    ↻
+</button>
+
+                </div>
+
+                <div class="volume">
+
+                    <button id="muet" title="Muet">
+                        🔊
+                    </button>
+
+                    <input
+                        type="range"
+                        id="volume"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value="1"
+                    >
+
+                </div>
+
+            </section>
+
+
+            <!-- PARTIE DROITE : LISTE DES MORCEAUX -->
+            <aside class="zone-liste">
+
+                <h2>Liste des morceaux</h2>
+
+                <div id="liste-morceaux" class="liste-morceaux"></div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+<div id="fenetre-paroles" class="fenetre-paroles">
+
+    <div class="contenu-paroles">
+
+        <button id="fermer-paroles" class="fermer-paroles">
+            ✕
+        </button>
+
+        <h2 id="titre-paroles"></h2>
+
+        <div id="texte-paroles"></div>
+
+    </div>
+
+</div>
+
+    <script src="js/artistes.js"></script>
+    <script src="js/lecteur.js"></script>
+
+</body>
+
+</html>

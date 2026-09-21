@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artiste</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main class="fiche-artiste">
+
+        <a href="index.html" class="retour">← Retour aux artistes</a>
+
+        <section id="presentation"></section>
+
+        <section id="discographie"></section>
+
+        <section id="concerts"></section>
+
+    </main>
+
+    <script src="js/artistes.js"></script>
+
+    <script>
+        const parametres = new URLSearchParams(window.location.search);
+        const idArtiste = parametres.get("id");
+
+        const artiste = artistes[idArtiste];
+
+        if (!artiste) {
+
+            document.querySelector(".fiche-artiste").innerHTML = `
+                <a href="index.html" class="retour">← Retour aux artistes</a>
+                <h1>Artiste introuvable</h1>
+            `;
+
+        } else {
+
+            document.title = artiste.nom;
+
+            document.getElementById("presentation").innerHTML = `
+                <img class="photo-artiste" src="${artiste.photo}" alt="${artiste.nom}">
+                <h1>${artiste.nom}</h1>
+
+                <div class="biographie">
+                    <h2>Biographie</h2>
+                    <p>${artiste.biographie}</p>
+                </div>
+            `;
+
+
+            let discographieHTML = `
+                <h2>Discographie</h2>
+            `;
+
+
+            if (artiste.albums.length > 0) {
+
+                discographieHTML += `
+                    <h3>Albums</h3>
+                    <div class="liste-sorties">
+                `;
+
+                artiste.albums.forEach(album => {
+
+                    discographieHTML += `
+                        <a class="carte-sortie" href="lecteur.html?artiste=${idArtiste}&album=${album.id}">
+                            <img src="${album.pochette}" alt="${album.titre}">
+                            <h4>${album.titre}</h4>
+                            <p>${album.annee}</p>
+                        </a>
+                    `;
+
+                });
+
+                discographieHTML += `</div>`;
+
+            } else {
+
+                discographieHTML += `<p>Aucun album pour le moment.</p>`;
+
+            }
+
+
+            if (artiste.singles.length > 0) {
+
+                discographieHTML += `
+                    <h3>Singles</h3>
+                    <div class="liste-sorties">
+                `;
+
+                artiste.singles.forEach(single => {
+
+                    discographieHTML += `
+                        <a class="carte-sortie" href="lecteur.html?artiste=${idArtiste}&album=${single.id}">
+                            <img src="${single.pochette}" alt="${single.titre}">
+                            <h4>${single.titre}</h4>
+                            <p>${single.annee}</p>
+                        </a>
+                    `;
+
+                });
+
+                discographieHTML += `</div>`;
+
+            }
+
+
+            if (artiste.lives.length > 0) {
+
+                discographieHTML += `
+                    <h3>Lives</h3>
+                    <div class="liste-sorties">
+                `;
+
+                artiste.lives.forEach(live => {
+
+                    discographieHTML += `
+                        <a class="carte-sortie" href="lecteur.html?artiste=${idArtiste}&album=${live.id}">
+                            <img src="${live.pochette}" alt="${live.titre}">
+                            <h4>${live.titre}</h4>
+                            <p>${live.annee}</p>
+                        </a>
+                    `;
+
+                });
+
+                discographieHTML += `</div>`;
+
+            }
+
+
+            document.getElementById("discographie").innerHTML = discographieHTML;
+
+
+            let concertsHTML = `
+                <h2>Concerts</h2>
+            `;
+
+            if (artiste.concerts.length > 0) {
+
+                artiste.concerts.forEach(concert => {
+
+                    concertsHTML += `
+                        <div class="concert">
+                            <h3>${concert.date}</h3>
+                            <p>${concert.lieu}</p>
+                        </div>
+                    `;
+
+                });
+
+            } else {
+
+                concertsHTML += `<p>Aucune date annoncée pour le moment.</p>`;
+
+            }
+
+            document.getElementById("concerts").innerHTML = concertsHTML;
+        }
+    </script>
+
+</body>
+</html>

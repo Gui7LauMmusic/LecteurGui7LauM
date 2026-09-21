@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gui7LauM - Artistes</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <main class="accueil">
+
+        <h1>Mes artistes</h1>
+
+        <div id="liste-artistes" class="liste-artistes"></div>
+
+    </main>
+
+    <script src="js/artistes.js"></script>
+
+    <script>
+        const listeArtistes = document.getElementById("liste-artistes");
+
+        for (const id in artistes) {
+
+            const artiste = artistes[id];
+
+            const carte = document.createElement("a");
+
+            carte.className = "carte-artiste";
+            carte.href = "artiste.html?id=" + id;
+
+            carte.innerHTML = `
+                <img src="${artiste.photo}" alt="${artiste.nom}">
+                <h2>${artiste.nom}</h2>
+            `;
+
+            listeArtistes.appendChild(carte);
+        }
+    </script>
+
+</body>
+</html>

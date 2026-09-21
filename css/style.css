@@ -1,0 +1,616 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: white;
+}
+
+/* =========================
+   ACCUEIL
+   ========================= */
+
+.accueil {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 40px;
+}
+
+.liste-artistes {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.carte-artiste {
+    width: 300px;
+    color: white;
+    text-decoration: none;
+    transition: transform 0.2s;
+}
+
+.carte-artiste:hover {
+    transform: scale(1.03);
+}
+
+.carte-artiste img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+}
+
+.carte-artiste h2 {
+    margin-top: 15px;
+}
+
+
+/* =========================
+   PAGE ARTISTE
+   ========================= */
+
+.fiche-artiste {
+    max-width: 1100px;
+    margin: auto;
+    padding: 30px 20px 60px;
+}
+
+.retour {
+    display: inline-block;
+    margin-bottom: 30px;
+    color: white;
+    text-decoration: none;
+}
+
+.photo-artiste {
+    width: 300px;
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.fiche-artiste h1 {
+    margin-top: 20px;
+}
+
+.biographie {
+    margin: 40px 0;
+}
+
+.fiche-artiste section {
+    margin-bottom: 50px;
+}
+
+.fiche-artiste h2 {
+    margin-bottom: 25px;
+}
+
+.fiche-artiste h3 {
+    margin-top: 35px;
+}
+
+.liste-sorties {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.carte-sortie {
+    width: 220px;
+    color: white;
+    text-decoration: none;
+}
+
+.carte-sortie img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.carte-sortie h4 {
+    margin: 10px 0 5px;
+}
+
+.carte-sortie p {
+    margin: 0;
+    opacity: 0.7;
+}
+
+.concert {
+    padding: 15px 0;
+    border-bottom: 1px solid #333;
+}
+
+
+/* =========================
+   LECTEUR
+   ========================= */
+
+.lecteur {
+    max-width: 1300px;
+    margin: auto;
+    padding: 30px 30px 60px;
+}
+
+.lecteur > .retour {
+    margin-bottom: 25px;
+}
+
+
+/* Disposition principale */
+
+.lecteur-principal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 50px;
+    align-items: start;
+}
+
+
+/* =========================
+   ZONE DE LECTURE
+   ========================= */
+
+.zone-lecture {
+    text-align: center;
+    min-width: 0;
+}
+
+
+/* Disque */
+
+.disque {
+    position: relative;
+    width: min(430px, 80vw);
+    aspect-ratio: 1 / 1;
+    margin: 20px auto 35px;
+    border-radius: 50%;
+    background: #050505;
+    box-shadow:
+        0 0 0 8px #181818,
+        0 15px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.disque img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+
+
+/* Trou central du disque */
+
+.centre-disque {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #111;
+    border: 5px solid #333;
+    border-radius: 50%;
+}
+
+
+/* Informations */
+
+.informations-lecture {
+    margin-bottom: 25px;
+}
+
+.artiste-actuel {
+    margin: 0 0 8px;
+    font-size: 15px;
+    opacity: 0.65;
+}
+
+.informations-lecture h1 {
+    margin: 0 0 12px;
+    font-size: 28px;
+}
+
+.informations-lecture h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+
+/* =========================
+   PROGRESSION
+   ========================= */
+
+.progression {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto 25px;
+}
+
+.barre-progression {
+    width: 100%;
+    height: 7px;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.progression-actuelle {
+    width: 0%;
+    height: 100%;
+    background: white;
+    border-radius: 10px;
+}
+
+.temps {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 13px;
+    opacity: 0.65;
+}
+
+
+/* On cache le lecteur audio natif */
+
+.zone-lecture audio {
+    display: none;
+}
+
+
+/* =========================
+   COMMANDES
+   ========================= */
+
+.commandes {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 20px 0 25px;
+}
+
+.commandes button,
+.volume button {
+    border: none;
+    background: #222;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+    transition: transform 0.15s, background 0.15s;
+}
+
+.commandes button:hover,
+.volume button:hover {
+    transform: scale(1.08);
+    background: #333;
+}
+
+#lecture-pause {
+    width: 62px;
+    height: 62px;
+    font-size: 24px;
+}
+
+
+/* =========================
+   VOLUME
+   ========================= */
+
+.volume {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.volume input {
+    width: 180px;
+    cursor: pointer;
+}
+
+
+/* =========================
+   LISTE DES MORCEAUX
+   ========================= */
+
+.zone-liste {
+    background: #181818;
+    border-radius: 15px;
+    padding: 25px;
+    max-height: 650px;
+    overflow-y: auto;
+}
+
+.zone-liste h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.liste-morceaux {
+    text-align: left;
+}
+
+.morceau {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 10px;
+    border-bottom: 1px solid #292929;
+    border-radius: 8px;
+}
+
+.morceau.disponible {
+    cursor: pointer;
+}
+
+.morceau.disponible:hover {
+    background: #242424;
+}
+
+.morceau.a-venir {
+    color: #666;
+}
+
+.numero {
+    width: 30px;
+    flex-shrink: 0;
+}
+
+.titre {
+    flex: 1;
+}
+
+.date-sortie {
+    font-style: italic;
+}
+
+.morceau.en-lecture {
+    background: #292929;
+}
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 850px) {
+
+    .lecteur {
+        padding: 15px 12px 40px;
+    }
+
+    .lecteur-principal {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .zone-liste {
+        max-height: none;
+    }
+
+    .disque {
+        width: min(360px, 82vw);
+        margin: 10px auto 30px;
+    }
+
+    .informations-lecture h1 {
+        font-size: 25px;
+    }
+
+    .informations-lecture h2 {
+        font-size: 20px;
+    }
+
+    .commandes {
+        gap: 9px;
+    }
+
+    .commandes button,
+    .volume button {
+        width: 44px;
+        height: 44px;
+    }
+
+    #lecture-pause {
+        width: 56px;
+        height: 56px;
+    }
+
+    .volume input {
+        width: 160px;
+    }
+}
+
+
+@media (max-width: 500px) {
+
+    .informations-lecture h1 {
+        font-size: 23px;
+    }
+
+    .informations-lecture h2 {
+        font-size: 19px;
+    }
+
+    .commandes {
+        gap: 8px;
+    }
+
+    .commandes button,
+    .volume button {
+        width: 43px;
+        height: 43px;
+        font-size: 16px;
+    }
+
+    #lecture-pause {
+        width: 55px;
+        height: 55px;
+    }
+
+    .zone-liste {
+        padding: 18px;
+    }
+}
+
+/* Etats des fonctions */
+
+.commandes button.actif {
+    background: #4da6ff;
+    color: white;
+}
+
+.commandes button.repetition-liste {
+    background: #b06cff;
+    color: white;
+}
+
+.cadenas {
+    margin-left: auto;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.disque {
+    transform: rotate(0deg);
+}
+
+.retour-cache {
+    display: none;
+}
+
+.lien-version {
+    display: inline-block;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    color: #4da6ff;
+    text-decoration: none;
+    font-size: 15px;
+    transition: opacity 0.2s ease;
+}
+
+.lien-version:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
+
+.paroles {
+    margin-left: 10px;
+    padding: 3px 6px;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.paroles:hover {
+    color: white;
+    background: #333;
+}
+
+.fenetre-paroles {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.75);
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+}
+
+.fenetre-paroles.ouverte {
+    display: flex;
+}
+
+.contenu-paroles {
+    position: relative;
+    width: min(700px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 35px 45px 45px;
+    background: #181818;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.contenu-paroles h2 {
+    margin: 0 0 30px;
+    text-align: center;
+    font-size: 26px;
+}
+
+#texte-paroles {
+    white-space: pre-wrap;
+    line-height: 1.8;
+    font-size: 16px;
+    text-align: center;
+}
+
+.fermer-paroles {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.fermer-paroles:hover {
+    color: white;
+}
+
+.titre-morceau-actuel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.titre-morceau-actuel h2 {
+    margin: 0;
+}
+
+.paroles-actuelles {
+    padding: 4px 7px;
+    border: none;
+    background: transparent;
+    color: #aaa;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+
+.paroles-actuelles:hover {
+    color: white;
+    background: #333;
+}
