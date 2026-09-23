@@ -105,7 +105,7 @@ function animerDisque(timestamp) {
         angleDisque -= 360;
     }
 
-    disque.style.transform = `rotate(${angleDisque}deg)`;
+    pochette.style.transform = `rotate(${angleDisque}deg)`;
 
     derniereRotation = timestamp;
 
@@ -218,7 +218,7 @@ rotationEnCours = false;
 angleDisque = 0;
 derniereRotation = null;
 
-disque.style.transform = "rotate(0deg)";
+pochette.style.transform = "rotate(0deg)";
 
     morceauActuel = index;
 
@@ -296,7 +296,7 @@ boutonStop.addEventListener("click", () => {
     angleDisque = 0;
     derniereRotation = null;
 
-    disque.style.transform = "rotate(0deg)";
+    pochette.style.transform = "rotate(0deg)";
 
     mettreAJourProgression();
 });
@@ -734,5 +734,14 @@ boutonParolesActuelles.addEventListener("click", async () => {
 fermerParoles.addEventListener("click", () => {
 
     fenetreParoles.classList.remove("ouverte");
+
+});
+
+
+fenetreParoles.addEventListener("click", (event) => {
+
+    if (event.target === fenetreParoles) {
+        fenetreParoles.classList.remove("ouverte");
+    }
 
 });
