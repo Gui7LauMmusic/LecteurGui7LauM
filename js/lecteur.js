@@ -280,7 +280,6 @@ boutonLecturePause.addEventListener("click", () => {
     }
 });
 
-
 /* =========================
    STOP
    ========================= */
@@ -602,6 +601,30 @@ boutonMuet.addEventListener("click", () => {
    ========================= */
 
 const disque = document.querySelector(".disque");
+
+
+disque.addEventListener("click", () => {
+
+    if (morceauActuel === -1) {
+
+        const premierDisponible = album.morceaux.findIndex(
+            morceau => estDisponible(morceau)
+        );
+
+        if (premierDisponible !== -1) {
+            jouerMorceau(premierDisponible);
+        }
+
+        return;
+    }
+
+    if (audio.paused) {
+        audio.play();
+    } else {
+        audio.pause();
+    }
+
+});
 
 
 audio.addEventListener("play", () => {
