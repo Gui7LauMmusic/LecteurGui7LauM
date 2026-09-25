@@ -8,6 +8,7 @@
     <title>Lecteur</title>
 
     <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -144,6 +145,12 @@
 
     <script src="js/artistes.js"></script>
     <script src="js/lecteur.js"></script>
+
+    <script>
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js");
+    }
+</script>
 
 </body>
 

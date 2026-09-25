@@ -1,0 +1,9 @@
+{
+    "name": "Gui7LauM Music",
+    "short_name": "Gui7LauM",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#111111",
+    "theme_color": "#111111",
+    "lang": "fr"
+}
