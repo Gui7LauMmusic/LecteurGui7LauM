@@ -1,4 +1,4 @@
-const CACHE_NAME = "gui7laum-v1";
+const CACHE_NAME = "gui7laum-v2";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
     "./",
@@ -19,9 +19,23 @@ self.addEventListener("install", event => {
     );
 });
 
+self.addEventListener("activate", event => {
+    event.waitUntil(
+        caches.keys().then(noms => {
+            return Promise.all(
+                noms
+                    .filter(nom => nom !== CACHE_NAME)
+                    .map(nom => caches.delete(nom))
+            );
+        })
+    );
+});
+
 self.addEventListener("fetch", event => {
     event.respondWith(
-        caches.match(event.request).then(reponse => {
+        caches.match(event.request, {
+            ignoreSearch: true
+        }).then(reponse => {
             return reponse || fetch(event.request);
         })
     );
