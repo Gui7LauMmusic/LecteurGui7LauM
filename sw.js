@@ -1,4 +1,5 @@
-const CACHE_NAME = "gui7laum-v2";
+const CACHE_NAME = "gui7laum-v4";
+const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
     "./",
@@ -12,31 +13,76 @@ const FICHIERS_A_METTRE_EN_CACHE = [
 ];
 
 self.addEventListener("install", event => {
+
     event.waitUntil(
+
         caches.open(CACHE_NAME).then(cache => {
             return cache.addAll(FICHIERS_A_METTRE_EN_CACHE);
         })
+
     );
+
+    self.skipWaiting();
 });
+
 
 self.addEventListener("activate", event => {
+
     event.waitUntil(
-        caches.keys().then(noms => {
-            return Promise.all(
-                noms
-                    .filter(nom => nom !== CACHE_NAME)
-                    .map(nom => caches.delete(nom))
-            );
-        })
+
+        Promise.all([
+
+            self.clients.claim(),
+
+            caches.keys().then(noms => {
+
+                return Promise.all(
+
+                    noms
+                        .filter(nom =>
+                            nom !== CACHE_NAME &&
+                            nom !== CACHE_AUDIO_NAME
+                        )
+                        .map(nom =>
+                            caches.delete(nom)
+                        )
+
+                );
+
+            })
+
+        ])
+
     );
 });
 
+
 self.addEventListener("fetch", event => {
+
     event.respondWith(
+
         caches.match(event.request, {
             ignoreSearch: true
         }).then(reponse => {
-            return reponse || fetch(event.request);
+
+            if (reponse) {
+                return reponse;
+            }
+
+            return caches.open(CACHE_AUDIO_NAME).then(cache => {
+
+                return cache.match(event.request).then(audioEnCache => {
+
+                    if (audioEnCache) {
+                        return audioEnCache;
+                    }
+
+                    return fetch(event.request);
+                });
+
+            });
+
         })
+
     );
 });
