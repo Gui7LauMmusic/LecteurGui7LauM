@@ -641,3 +641,20 @@ h1 {
     cursor: wait;
     transform: none;
 }
+
+.telecharger-album {
+    display: block;
+    margin: 0 auto 12px;
+    padding: 6px 12px;
+    border: 1px solid #555;
+    border-radius: 20px;
+    background: transparent;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.telecharger-album:hover {
+    background: #222;
+    color: #fff;
+}

@@ -272,6 +272,84 @@ async function changerEtatTelechargement(morceau, bouton) {
     }
 }
 
+async function telechargerAlbum() {
+
+    const bouton = document.getElementById("telecharger-album");
+
+    if (!bouton) {
+        return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = "⏳ Téléchargement...";
+
+    try {
+
+        const morceauxDisponibles =
+            album.morceaux.filter(morceau =>
+                estDisponible(morceau)
+            );
+
+        const cache =
+            await caches.open(CACHE_AUDIO_NAME);
+
+        for (const morceau of morceauxDisponibles) {
+
+            const dejaTelecharge =
+                await cache.match(morceau.fichier);
+
+            if (dejaTelecharge) {
+                continue;
+            }
+
+            const reponse =
+                await fetch(morceau.fichier);
+
+            if (!reponse.ok) {
+                throw new Error(
+                    "Impossible de télécharger : " +
+                    morceau.fichier
+                );
+            }
+
+            await cache.put(
+                morceau.fichier,
+                reponse.clone()
+            );
+        }
+
+        bouton.textContent = "🟢 Album téléchargé";
+
+    } catch (erreur) {
+
+        console.error(erreur);
+
+        bouton.textContent =
+            "⚠️ Erreur de téléchargement";
+
+        alert(
+            "Impossible de télécharger tout l’album. Vérifie ta connexion Internet."
+        );
+
+    } finally {
+
+        setTimeout(() => {
+            bouton.disabled = false;
+            bouton.textContent = "↓ Télécharger l'album";
+        }, 2000);
+    }
+}
+
+const boutonTelechargerAlbum =
+    document.getElementById("telecharger-album");
+
+if (boutonTelechargerAlbum) {
+    boutonTelechargerAlbum.addEventListener(
+        "click",
+        telechargerAlbum
+    );
+}
+
 
 /* =========================
    AFFICHAGE DES MORCEAUX
