@@ -75,7 +75,6 @@ let morceauActuel = -1;
 let modeAleatoire = false;
 
 let modeRepetition = "aucun";
-// valeurs possibles : "aucun", "titre", "liste"
 
 let volumeAvantMuet = 1;
 
@@ -83,6 +82,13 @@ let angleDisque = 0;
 let rotationEnCours = false;
 let derniereRotation = null;
 let animationDisque = null;
+
+const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
+
+
+/* =========================
+   ROTATION DU DISQUE
+   ========================= */
 
 function animerDisque(timestamp) {
 
@@ -98,7 +104,6 @@ function animerDisque(timestamp) {
 
     const difference = timestamp - derniereRotation;
 
-    // Vitesse : 45 degrés par seconde
     angleDisque += difference * 0.045;
 
     if (angleDisque >= 360) {
@@ -111,6 +116,7 @@ function animerDisque(timestamp) {
 
     animationDisque = requestAnimationFrame(animerDisque);
 }
+
 
 /* =========================
    INFORMATIONS DE BASE
@@ -146,10 +152,132 @@ function estDisponible(morceau) {
 
 
 /* =========================
+   TELECHARGEMENT HORS LIGNE
+   ========================= */
+
+async function estMorceauTelecharge(morceau) {
+
+    try {
+
+        const cache = await caches.open(CACHE_AUDIO_NAME);
+
+        const reponse = await cache.match(morceau.fichier);
+
+        return !!reponse;
+
+    } catch (erreur) {
+
+        console.error(
+            "Impossible de vérifier le téléchargement :",
+            erreur
+        );
+
+        return false;
+    }
+}
+
+
+async function telechargerMorceau(morceau, bouton) {
+
+    if (!estDisponible(morceau)) {
+        return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = "⏳";
+
+    try {
+
+        const reponse = await fetch(morceau.fichier);
+
+        if (!reponse.ok) {
+            throw new Error("Impossible de télécharger le morceau");
+        }
+
+        const cache =
+            await caches.open(CACHE_AUDIO_NAME);
+
+        await cache.put(
+            morceau.fichier,
+            reponse.clone()
+        );
+
+        bouton.textContent = "🟢";
+        bouton.title = "Supprimer le téléchargement";
+
+    } catch (erreur) {
+
+        console.error(erreur);
+
+        bouton.textContent = "⚪";
+        bouton.title = "Télécharger pour écouter hors connexion";
+
+        alert(
+            "Impossible de télécharger ce morceau. Vérifie ta connexion Internet."
+        );
+
+    } finally {
+
+        bouton.disabled = false;
+    }
+}
+
+
+async function supprimerTelechargement(morceau, bouton) {
+
+    bouton.disabled = true;
+    bouton.textContent = "⏳";
+
+    try {
+
+        const cache =
+            await caches.open(CACHE_AUDIO_NAME);
+
+        await cache.delete(morceau.fichier);
+
+        bouton.textContent = "⚪";
+        bouton.title = "Télécharger pour écouter hors connexion";
+
+    } catch (erreur) {
+
+        console.error(erreur);
+
+        bouton.textContent = "🟢";
+        bouton.title = "Supprimer le téléchargement";
+
+    } finally {
+
+        bouton.disabled = false;
+    }
+}
+
+
+async function changerEtatTelechargement(morceau, bouton) {
+
+    const telecharge = await estMorceauTelecharge(morceau);
+
+    if (telecharge) {
+
+        await supprimerTelechargement(
+            morceau,
+            bouton
+        );
+
+    } else {
+
+        await telechargerMorceau(
+            morceau,
+            bouton
+        );
+    }
+}
+
+
+/* =========================
    AFFICHAGE DES MORCEAUX
    ========================= */
 
-function afficherMorceaux() {
+async function afficherMorceaux() {
 
     listeMorceaux.innerHTML = "";
 
@@ -167,27 +295,66 @@ function afficherMorceaux() {
             duree.className = "duree-morceau";
 
             ligne.innerHTML = `
-    <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
-    <span class="titre">${morceau.titre}</span>
-`;
+                <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
+                <span class="titre">${morceau.titre}</span>
+            `;
 
             ligne.appendChild(duree);
 
+            const boutonTelechargement =
+                document.createElement("button");
+
+            boutonTelechargement.className =
+                "bouton-telechargement";
+
+            boutonTelechargement.textContent = "⚪";
+
+            boutonTelechargement.title =
+                "Télécharger pour écouter hors connexion";
+
+            boutonTelechargement.addEventListener(
+                "click",
+                event => {
+
+                    event.stopPropagation();
+
+                    changerEtatTelechargement(
+                        morceau,
+                        boutonTelechargement
+                    );
+                }
+            );
+
+            ligne.appendChild(boutonTelechargement);
+
             ligne.addEventListener("click", () => {
                 jouerMorceau(index);
+            });
+
+            estMorceauTelecharge(morceau).then(telecharge => {
+
+                if (telecharge) {
+
+                    boutonTelechargement.textContent = "🟢";
+
+                    boutonTelechargement.title =
+                        "Supprimer le téléchargement";
+                }
             });
 
         } else {
 
             ligne.classList.add("a-venir");
 
-            const date = new Date(morceau.date + "T00:00:00");
+            const date =
+                new Date(morceau.date + "T00:00:00");
 
-            const dateFormatee = date.toLocaleDateString("fr-FR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            });
+            const dateFormatee =
+                date.toLocaleDateString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                });
 
             ligne.innerHTML = `
                 <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
@@ -202,6 +369,7 @@ function afficherMorceaux() {
     mettreAJourSelection();
 }
 
+
 /* =========================
    LECTURE D'UN MORCEAU
    ========================= */
@@ -214,11 +382,11 @@ function jouerMorceau(index) {
         return;
     }
 
-rotationEnCours = false;
-angleDisque = 0;
-derniereRotation = null;
+    rotationEnCours = false;
+    angleDisque = 0;
+    derniereRotation = null;
 
-pochette.style.transform = "rotate(0deg)";
+    pochette.style.transform = "rotate(0deg)";
 
     morceauActuel = index;
 
@@ -280,6 +448,7 @@ boutonLecturePause.addEventListener("click", () => {
     }
 });
 
+
 /* =========================
    STOP
    ========================= */
@@ -290,7 +459,6 @@ boutonStop.addEventListener("click", () => {
 
     audio.currentTime = 0;
 
-    // Remettre le disque à sa position de départ
     rotationEnCours = false;
     angleDisque = 0;
     derniereRotation = null;
@@ -370,9 +538,10 @@ function jouerSuivant() {
 
     } else if (modeRepetition === "liste") {
 
-        const premierDisponible = album.morceaux.findIndex(
-            morceau => estDisponible(morceau)
-        );
+        const premierDisponible =
+            album.morceaux.findIndex(
+                morceau => estDisponible(morceau)
+            );
 
         if (premierDisponible !== -1) {
             jouerMorceau(premierDisponible);
@@ -394,7 +563,8 @@ boutonAleatoire.addEventListener("click", () => {
         modeAleatoire
     );
 
-    boutonAleatoire.textContent = modeAleatoire ? "⤨" : "⇄";
+    boutonAleatoire.textContent =
+        modeAleatoire ? "⤨" : "⇄";
 });
 
 
@@ -405,7 +575,9 @@ function morceauAleatoire() {
             morceau,
             index
         }))
-        .filter(element => estDisponible(element.morceau));
+        .filter(element =>
+            estDisponible(element.morceau)
+        );
 
     if (morceauxDisponibles.length === 0) {
         return -1;
@@ -418,9 +590,13 @@ function morceauAleatoire() {
     let choix;
 
     do {
+
         choix =
             morceauxDisponibles[
-                Math.floor(Math.random() * morceauxDisponibles.length)
+                Math.floor(
+                    Math.random() *
+                    morceauxDisponibles.length
+                )
             ].index;
 
     } while (choix === morceauActuel);
@@ -440,32 +616,48 @@ boutonRepetition.addEventListener("click", () => {
         modeRepetition = "titre";
 
         boutonRepetition.textContent = "↻¹";
-        boutonRepetition.classList.remove("repetition-liste");
+
+        boutonRepetition.classList.remove(
+            "repetition-liste"
+        );
+
         boutonRepetition.classList.add("actif");
 
-        boutonRepetition.title = "Répéter le titre";
+        boutonRepetition.title =
+            "Répéter le titre";
 
     } else if (modeRepetition === "titre") {
 
         modeRepetition = "liste";
 
         boutonRepetition.textContent = "∞";
-        boutonRepetition.classList.remove("actif");
-        boutonRepetition.classList.add("repetition-liste");
 
-        boutonRepetition.title = "Répéter l'album";
+        boutonRepetition.classList.remove("actif");
+
+        boutonRepetition.classList.add(
+            "repetition-liste"
+        );
+
+        boutonRepetition.title =
+            "Répéter l'album";
 
     } else {
 
         modeRepetition = "aucun";
 
         boutonRepetition.textContent = "↻";
-        boutonRepetition.classList.remove("actif");
-        boutonRepetition.classList.remove("repetition-liste");
 
-        boutonRepetition.title = "Répétition désactivée";
+        boutonRepetition.classList.remove("actif");
+
+        boutonRepetition.classList.remove(
+            "repetition-liste"
+        );
+
+        boutonRepetition.title =
+            "Répétition désactivée";
     }
 });
+
 
 /* =========================
    FIN DU MORCEAU
@@ -504,7 +696,8 @@ function mettreAJourProgression() {
     const pourcentage =
         (audio.currentTime / audio.duration) * 100;
 
-    progression.style.width = pourcentage + "%";
+    progression.style.width =
+        pourcentage + "%";
 
     tempsActuel.textContent =
         formaterTemps(audio.currentTime);
@@ -520,7 +713,8 @@ function formaterTemps(secondes) {
         return "0:00";
     }
 
-    const minutes = Math.floor(secondes / 60);
+    const minutes =
+        Math.floor(secondes / 60);
 
     const secondesRestantes =
         Math.floor(secondes % 60)
@@ -535,7 +729,7 @@ function formaterTemps(secondes) {
    CLIC SUR LA BARRE
    ========================= */
 
-barreProgression.addEventListener("click", (event) => {
+barreProgression.addEventListener("click", event => {
 
     if (!audio.duration) {
         return;
@@ -597,19 +791,19 @@ boutonMuet.addEventListener("click", () => {
 
 
 /* =========================
-   ETAT LECTURE / PAUSE
+   CLIC SUR LE DISQUE
    ========================= */
 
 const disque = document.querySelector(".disque");
-
 
 disque.addEventListener("click", () => {
 
     if (morceauActuel === -1) {
 
-        const premierDisponible = album.morceaux.findIndex(
-            morceau => estDisponible(morceau)
-        );
+        const premierDisponible =
+            album.morceaux.findIndex(
+                morceau => estDisponible(morceau)
+            );
 
         if (premierDisponible !== -1) {
             jouerMorceau(premierDisponible);
@@ -623,9 +817,12 @@ disque.addEventListener("click", () => {
     } else {
         audio.pause();
     }
-
 });
 
+
+/* =========================
+   ETAT LECTURE / PAUSE
+   ========================= */
 
 audio.addEventListener("play", () => {
 
@@ -635,7 +832,8 @@ audio.addEventListener("play", () => {
     rotationEnCours = true;
 
     if (!animationDisque) {
-        animationDisque = requestAnimationFrame(animerDisque);
+        animationDisque =
+            requestAnimationFrame(animerDisque);
     }
 });
 
@@ -647,6 +845,8 @@ audio.addEventListener("pause", () => {
 
     rotationEnCours = false;
 });
+
+
 /* =========================
    DUREE DU MORCEAU
    ========================= */
@@ -682,19 +882,134 @@ function chargerDureesDesMorceaux() {
 
         const audioTemporaire = new Audio();
 
-        audioTemporaire.src = morceau.fichier;
+        audioTemporaire.src =
+            morceau.fichier;
 
-        audioTemporaire.addEventListener("loadedmetadata", () => {
+        audioTemporaire.addEventListener(
+            "loadedmetadata",
+            () => {
 
-            const duree = ligne.querySelector(".duree-morceau");
+                const duree =
+                    ligne.querySelector(
+                        ".duree-morceau"
+                    );
 
-            if (duree) {
-                duree.textContent =
-                    formaterTemps(audioTemporaire.duration);
+                if (duree) {
+
+                    duree.textContent =
+                        formaterTemps(
+                            audioTemporaire.duration
+                        );
+                }
             }
-        });
+        );
     });
 }
+
+
+/* =========================
+   PAROLES
+   ========================= */
+
+const fenetreParoles =
+    document.getElementById("fenetre-paroles");
+
+const titreParoles =
+    document.getElementById("titre-paroles");
+
+const texteParoles =
+    document.getElementById("texte-paroles");
+
+const fermerParoles =
+    document.getElementById("fermer-paroles");
+
+
+boutonParolesActuelles.addEventListener(
+    "click",
+    async () => {
+
+        const index = morceauActuel;
+
+        if (index === -1) {
+            return;
+        }
+
+        const morceau =
+            album.morceaux[index];
+
+        let nomFichier =
+            morceau.titre;
+
+        if (idAlbum === "elle-est-moi-acoustique") {
+            nomFichier +=
+                " (version acoustique)";
+        }
+
+        const chemin =
+            `paroles/${idArtiste}/${album.titre}/${String(index + 1).padStart(2, "0")} - ${nomFichier}.txt`;
+
+        try {
+
+            const reponse =
+                await fetch(chemin);
+
+            if (!reponse.ok) {
+                throw new Error(
+                    "Fichier de paroles introuvable"
+                );
+            }
+
+            const paroles =
+                await reponse.text();
+
+            titreParoles.textContent =
+                morceau.titre;
+
+            texteParoles.textContent =
+                paroles;
+
+            fenetreParoles.classList.add(
+                "ouverte"
+            );
+
+        } catch (erreur) {
+
+            console.error(erreur);
+
+            texteParoles.textContent =
+                "Impossible de charger les paroles.";
+
+            fenetreParoles.classList.add(
+                "ouverte"
+            );
+        }
+    }
+);
+
+
+fermerParoles.addEventListener(
+    "click",
+    () => {
+
+        fenetreParoles.classList.remove(
+            "ouverte"
+        );
+    }
+);
+
+
+fenetreParoles.addEventListener(
+    "click",
+    event => {
+
+        if (event.target === fenetreParoles) {
+
+            fenetreParoles.classList.remove(
+                "ouverte"
+            );
+        }
+    }
+);
 
 
 /* =========================
@@ -703,68 +1018,3 @@ function chargerDureesDesMorceaux() {
 
 afficherMorceaux();
 chargerDureesDesMorceaux();
-
-const fenetreParoles = document.getElementById("fenetre-paroles");
-const titreParoles = document.getElementById("titre-paroles");
-const texteParoles = document.getElementById("texte-paroles");
-const fermerParoles = document.getElementById("fermer-paroles");
-
-boutonParolesActuelles.addEventListener("click", async () => {
-
-    const index = morceauActuel;
-
-    if (index === -1) {
-        return;
-    }
-
-    const morceau = album.morceaux[index];
-
-    let nomFichier = morceau.titre;
-
-    if (idAlbum === "elle-est-moi-acoustique") {
-        nomFichier += " (version acoustique)";
-    }
-
-    const chemin =
-        `paroles/${idArtiste}/${album.titre}/${String(index + 1).padStart(2, "0")} - ${nomFichier}.txt`;
-
-    try {
-
-        const reponse = await fetch(chemin);
-
-        if (!reponse.ok) {
-            throw new Error("Fichier de paroles introuvable");
-        }
-
-        const paroles = await reponse.text();
-
-        titreParoles.textContent = morceau.titre;
-        texteParoles.textContent = paroles;
-
-        fenetreParoles.classList.add("ouverte");
-
-    } catch (erreur) {
-
-        console.error(erreur);
-
-        texteParoles.textContent =
-            "Impossible de charger les paroles.";
-
-        fenetreParoles.classList.add("ouverte");
-    }
-});
-
-fermerParoles.addEventListener("click", () => {
-
-    fenetreParoles.classList.remove("ouverte");
-
-});
-
-
-fenetreParoles.addEventListener("click", (event) => {
-
-    if (event.target === fenetreParoles) {
-        fenetreParoles.classList.remove("ouverte");
-    }
-
-});

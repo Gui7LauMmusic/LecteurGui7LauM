@@ -615,3 +615,29 @@ h1 {
     color: white;
     background: #333;
 }
+
+/* =========================
+   TELECHARGEMENT HORS LIGNE
+   ========================= */
+
+.bouton-telechargement {
+    margin-left: 10px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.bouton-telechargement:hover {
+    transform: scale(1.15);
+}
+
+.bouton-telechargement:disabled {
+    cursor: wait;
+    transform: none;
+}
