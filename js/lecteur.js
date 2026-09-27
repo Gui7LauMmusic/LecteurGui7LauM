@@ -1456,6 +1456,11 @@ if (boutonTelechargerAlbum) {
    INITIALISATION
    ========================= */
 
-afficherMorceaux();
+async function initialiserLecteur() {
 
-chargerDureesDesMorceaux();
+    await afficherMorceaux();
+
+    chargerDureesDesMorceaux();
+}
+
+initialiserLecteur();
