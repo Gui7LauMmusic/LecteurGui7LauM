@@ -1,7 +1,7 @@
 {
     "name": "Gui7LauM Music",
     "short_name": "Gui7LauM",
-    "start_url": "./",
+    "start_url": "./lecteur.html?artiste=gui7laum-ia&album=elle-est-moi",
     "display": "standalone",
     "background_color": "#111111",
     "theme_color": "#111111",
