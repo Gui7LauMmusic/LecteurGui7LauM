@@ -56,6 +56,9 @@ const boutonRepetition = document.getElementById("repetition");
 const boutonParolesActuelles =
     document.getElementById("paroles-actuelles");
 
+const boutonTelechargerAlbum =
+    document.getElementById("telecharger-album");
+
 const barreProgression = document.querySelector(".barre-progression");
 const progression = document.getElementById("progression");
 
@@ -177,6 +180,121 @@ async function estMorceauTelecharge(morceau) {
 }
 
 
+/* =========================
+   MISE A JOUR DES PASTILLES
+   ========================= */
+
+async function mettreAJourPastillesTelechargement() {
+
+    const boutons =
+        document.querySelectorAll(
+            ".bouton-telechargement"
+        );
+
+    for (const bouton of boutons) {
+
+        const index = Number(bouton.dataset.index);
+
+        const morceau = album.morceaux[index];
+
+        if (!morceau) {
+            continue;
+        }
+
+        const telecharge =
+            await estMorceauTelecharge(morceau);
+
+        if (telecharge) {
+
+            bouton.textContent = "🟢";
+
+            bouton.title =
+                "Supprimer le téléchargement";
+
+        } else {
+
+            bouton.textContent = "⚪";
+
+            bouton.title =
+                "Télécharger pour écouter hors connexion";
+        }
+    }
+}
+
+
+/* =========================
+   VERIFICATION ALBUM
+   ========================= */
+
+async function albumEstEntierementTelecharge() {
+
+    const morceauxDisponibles =
+        album.morceaux.filter(morceau =>
+            estDisponible(morceau)
+        );
+
+    if (morceauxDisponibles.length === 0) {
+        return false;
+    }
+
+    for (const morceau of morceauxDisponibles) {
+
+        const telecharge =
+            await estMorceauTelecharge(morceau);
+
+        if (!telecharge) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+/* =========================
+   MISE A JOUR BOUTON ALBUM
+   ========================= */
+
+async function mettreAJourBoutonAlbum() {
+
+    if (!boutonTelechargerAlbum) {
+        return;
+    }
+
+    const albumTelecharge =
+        await albumEstEntierementTelecharge();
+
+    if (albumTelecharge) {
+
+        boutonTelechargerAlbum.textContent =
+            "🟢 Album téléchargé";
+
+        boutonTelechargerAlbum.title =
+            "Supprimer le téléchargement de l'album";
+
+        boutonTelechargerAlbum.classList.add(
+            "album-telecharge"
+        );
+
+    } else {
+
+        boutonTelechargerAlbum.textContent =
+            "↓ Télécharger l'album";
+
+        boutonTelechargerAlbum.title =
+            "Télécharger les morceaux disponibles";
+
+        boutonTelechargerAlbum.classList.remove(
+            "album-telecharge"
+        );
+    }
+}
+
+
+/* =========================
+   TELECHARGER UN MORCEAU
+   ========================= */
+
 async function telechargerMorceau(morceau, bouton) {
 
     if (!estDisponible(morceau)) {
@@ -191,7 +309,9 @@ async function telechargerMorceau(morceau, bouton) {
         const reponse = await fetch(morceau.fichier);
 
         if (!reponse.ok) {
-            throw new Error("Impossible de télécharger le morceau");
+            throw new Error(
+                "Impossible de télécharger le morceau"
+            );
         }
 
         const cache =
@@ -203,14 +323,18 @@ async function telechargerMorceau(morceau, bouton) {
         );
 
         bouton.textContent = "🟢";
-        bouton.title = "Supprimer le téléchargement";
+
+        bouton.title =
+            "Supprimer le téléchargement";
 
     } catch (erreur) {
 
         console.error(erreur);
 
         bouton.textContent = "⚪";
-        bouton.title = "Télécharger pour écouter hors connexion";
+
+        bouton.title =
+            "Télécharger pour écouter hors connexion";
 
         alert(
             "Impossible de télécharger ce morceau. Vérifie ta connexion Internet."
@@ -219,9 +343,15 @@ async function telechargerMorceau(morceau, bouton) {
     } finally {
 
         bouton.disabled = false;
+
+        await mettreAJourBoutonAlbum();
     }
 }
 
+
+/* =========================
+   SUPPRIMER UN MORCEAU
+   ========================= */
 
 async function supprimerTelechargement(morceau, bouton) {
 
@@ -236,25 +366,39 @@ async function supprimerTelechargement(morceau, bouton) {
         await cache.delete(morceau.fichier);
 
         bouton.textContent = "⚪";
-        bouton.title = "Télécharger pour écouter hors connexion";
+
+        bouton.title =
+            "Télécharger pour écouter hors connexion";
 
     } catch (erreur) {
 
         console.error(erreur);
 
         bouton.textContent = "🟢";
-        bouton.title = "Supprimer le téléchargement";
+
+        bouton.title =
+            "Supprimer le téléchargement";
 
     } finally {
 
         bouton.disabled = false;
+
+        await mettreAJourBoutonAlbum();
     }
 }
 
 
-async function changerEtatTelechargement(morceau, bouton) {
+/* =========================
+   CHANGER ETAT MORCEAU
+   ========================= */
 
-    const telecharge = await estMorceauTelecharge(morceau);
+async function changerEtatTelechargement(
+    morceau,
+    bouton
+) {
+
+    const telecharge =
+        await estMorceauTelecharge(morceau);
 
     if (telecharge) {
 
@@ -272,82 +416,113 @@ async function changerEtatTelechargement(morceau, bouton) {
     }
 }
 
+
+/* =========================
+   TELECHARGER / SUPPRIMER ALBUM
+   ========================= */
+
 async function telechargerAlbum() {
 
-    const bouton = document.getElementById("telecharger-album");
-
-    if (!bouton) {
+    if (!boutonTelechargerAlbum) {
         return;
     }
 
-    bouton.disabled = true;
-    bouton.textContent = "⏳ Téléchargement...";
+    const albumTelecharge =
+        await albumEstEntierementTelecharge();
 
-    try {
+    boutonTelechargerAlbum.disabled = true;
 
-        const morceauxDisponibles =
-            album.morceaux.filter(morceau =>
-                estDisponible(morceau)
-            );
+    if (albumTelecharge) {
 
-        const cache =
-            await caches.open(CACHE_AUDIO_NAME);
+        boutonTelechargerAlbum.textContent =
+            "⏳ Suppression...";
 
-        for (const morceau of morceauxDisponibles) {
+        try {
 
-            const dejaTelecharge =
-                await cache.match(morceau.fichier);
+            const cache =
+                await caches.open(CACHE_AUDIO_NAME);
 
-            if (dejaTelecharge) {
-                continue;
-            }
+            const morceauxDisponibles =
+                album.morceaux.filter(morceau =>
+                    estDisponible(morceau)
+                );
 
-            const reponse =
-                await fetch(morceau.fichier);
+            for (const morceau of morceauxDisponibles) {
 
-            if (!reponse.ok) {
-                throw new Error(
-                    "Impossible de télécharger : " +
+                await cache.delete(
                     morceau.fichier
                 );
             }
 
-            await cache.put(
-                morceau.fichier,
-                reponse.clone()
+            await mettreAJourPastillesTelechargement();
+
+        } catch (erreur) {
+
+            console.error(erreur);
+
+            alert(
+                "Impossible de supprimer le téléchargement de l'album."
             );
         }
 
-        bouton.textContent = "🟢 Album téléchargé";
+    } else {
 
-    } catch (erreur) {
+        boutonTelechargerAlbum.textContent =
+            "⏳ Téléchargement...";
 
-        console.error(erreur);
+        try {
 
-        bouton.textContent =
-            "⚠️ Erreur de téléchargement";
+            const morceauxDisponibles =
+                album.morceaux.filter(morceau =>
+                    estDisponible(morceau)
+                );
 
-        alert(
-            "Impossible de télécharger tout l’album. Vérifie ta connexion Internet."
-        );
+            const cache =
+                await caches.open(CACHE_AUDIO_NAME);
 
-    } finally {
+            for (const morceau of morceauxDisponibles) {
 
-        setTimeout(() => {
-            bouton.disabled = false;
-            bouton.textContent = "↓ Télécharger l'album";
-        }, 2000);
+                const dejaTelecharge =
+                    await cache.match(
+                        morceau.fichier
+                    );
+
+                if (dejaTelecharge) {
+                    continue;
+                }
+
+                const reponse =
+                    await fetch(morceau.fichier);
+
+                if (!reponse.ok) {
+                    throw new Error(
+                        "Impossible de télécharger : " +
+                        morceau.fichier
+                    );
+                }
+
+                await cache.put(
+                    morceau.fichier,
+                    reponse.clone()
+                );
+
+                await mettreAJourPastillesTelechargement();
+            }
+
+        } catch (erreur) {
+
+            console.error(erreur);
+
+            alert(
+                "Impossible de télécharger tout l’album. Vérifie ta connexion Internet."
+            );
+        }
     }
-}
 
-const boutonTelechargerAlbum =
-    document.getElementById("telecharger-album");
+    boutonTelechargerAlbum.disabled = false;
 
-if (boutonTelechargerAlbum) {
-    boutonTelechargerAlbum.addEventListener(
-        "click",
-        telechargerAlbum
-    );
+    await mettreAJourPastillesTelechargement();
+    await mettreAJourBoutonAlbum();
 }
 
 
@@ -370,7 +545,9 @@ async function afficherMorceaux() {
             ligne.classList.add("disponible");
 
             const duree = document.createElement("span");
-            duree.className = "duree-morceau";
+
+            duree.className =
+                "duree-morceau";
 
             ligne.innerHTML = `
                 <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
@@ -385,7 +562,11 @@ async function afficherMorceaux() {
             boutonTelechargement.className =
                 "bouton-telechargement";
 
-            boutonTelechargement.textContent = "⚪";
+            boutonTelechargement.dataset.index =
+                index;
+
+            boutonTelechargement.textContent =
+                "⚪";
 
             boutonTelechargement.title =
                 "Télécharger pour écouter hors connexion";
@@ -403,36 +584,35 @@ async function afficherMorceaux() {
                 }
             );
 
-            ligne.appendChild(boutonTelechargement);
+            ligne.appendChild(
+                boutonTelechargement
+            );
 
-            ligne.addEventListener("click", () => {
-                jouerMorceau(index);
-            });
-
-            estMorceauTelecharge(morceau).then(telecharge => {
-
-                if (telecharge) {
-
-                    boutonTelechargement.textContent = "🟢";
-
-                    boutonTelechargement.title =
-                        "Supprimer le téléchargement";
+            ligne.addEventListener(
+                "click",
+                () => {
+                    jouerMorceau(index);
                 }
-            });
+            );
 
         } else {
 
             ligne.classList.add("a-venir");
 
             const date =
-                new Date(morceau.date + "T00:00:00");
+                new Date(
+                    morceau.date + "T00:00:00"
+                );
 
             const dateFormatee =
-                date.toLocaleDateString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric"
-                });
+                date.toLocaleDateString(
+                    "fr-FR",
+                    {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                    }
+                );
 
             ligne.innerHTML = `
                 <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
@@ -443,6 +623,10 @@ async function afficherMorceaux() {
 
         listeMorceaux.appendChild(ligne);
     });
+
+    await mettreAJourPastillesTelechargement();
+
+    await mettreAJourBoutonAlbum();
 
     mettreAJourSelection();
 }
@@ -464,15 +648,18 @@ function jouerMorceau(index) {
     angleDisque = 0;
     derniereRotation = null;
 
-    pochette.style.transform = "rotate(0deg)";
+    pochette.style.transform =
+        "rotate(0deg)";
 
     morceauActuel = index;
 
     audio.src = morceau.fichier;
 
-    morceauActuelElement.textContent = morceau.titre;
+    morceauActuelElement.textContent =
+        morceau.titre;
 
-    boutonParolesActuelles.dataset.index = index;
+    boutonParolesActuelles.dataset.index =
+        index;
 
     audio.load();
 
@@ -488,7 +675,8 @@ function jouerMorceau(index) {
 
 function mettreAJourSelection() {
 
-    const lignes = document.querySelectorAll(".morceau");
+    const lignes =
+        document.querySelectorAll(".morceau");
 
     lignes.forEach((ligne, index) => {
 
@@ -504,86 +692,105 @@ function mettreAJourSelection() {
    LECTURE / PAUSE
    ========================= */
 
-boutonLecturePause.addEventListener("click", () => {
+boutonLecturePause.addEventListener(
+    "click",
+    () => {
 
-    if (morceauActuel === -1) {
+        if (morceauActuel === -1) {
 
-        let premierDisponible = album.morceaux.findIndex(
-            morceau => estDisponible(morceau)
-        );
+            let premierDisponible =
+                album.morceaux.findIndex(
+                    morceau =>
+                        estDisponible(morceau)
+                );
 
-        if (premierDisponible !== -1) {
-            jouerMorceau(premierDisponible);
+            if (premierDisponible !== -1) {
+                jouerMorceau(
+                    premierDisponible
+                );
+            }
+
+            return;
         }
 
-        return;
+        if (audio.paused) {
+            audio.play();
+        } else {
+            audio.pause();
+        }
     }
-
-    if (audio.paused) {
-        audio.play();
-    } else {
-        audio.pause();
-    }
-});
+);
 
 
 /* =========================
    STOP
    ========================= */
 
-boutonStop.addEventListener("click", () => {
+boutonStop.addEventListener(
+    "click",
+    () => {
 
-    audio.pause();
+        audio.pause();
 
-    audio.currentTime = 0;
+        audio.currentTime = 0;
 
-    rotationEnCours = false;
-    angleDisque = 0;
-    derniereRotation = null;
+        rotationEnCours = false;
+        angleDisque = 0;
+        derniereRotation = null;
 
-    pochette.style.transform = "rotate(0deg)";
+        pochette.style.transform =
+            "rotate(0deg)";
 
-    mettreAJourProgression();
-});
+        mettreAJourProgression();
+    }
+);
 
 
 /* =========================
    PRECEDENT
    ========================= */
 
-boutonPrecedent.addEventListener("click", () => {
+boutonPrecedent.addEventListener(
+    "click",
+    () => {
 
-    if (morceauActuel === -1) {
-        return;
+        if (morceauActuel === -1) {
+            return;
+        }
+
+        let index =
+            morceauActuel - 1;
+
+        if (modeAleatoire) {
+            index = morceauAleatoire();
+        }
+
+        while (
+            index >= 0 &&
+            !estDisponible(
+                album.morceaux[index]
+            )
+        ) {
+            index--;
+        }
+
+        if (index >= 0) {
+            jouerMorceau(index);
+        }
     }
-
-    let index = morceauActuel - 1;
-
-    if (modeAleatoire) {
-        index = morceauAleatoire();
-    }
-
-    while (
-        index >= 0 &&
-        !estDisponible(album.morceaux[index])
-    ) {
-        index--;
-    }
-
-    if (index >= 0) {
-        jouerMorceau(index);
-    }
-});
+);
 
 
 /* =========================
    SUIVANT
    ========================= */
 
-boutonSuivant.addEventListener("click", () => {
-
-    jouerSuivant();
-});
+boutonSuivant.addEventListener(
+    "click",
+    () => {
+        jouerSuivant();
+    }
+);
 
 
 function jouerSuivant() {
@@ -600,29 +807,41 @@ function jouerSuivant() {
 
     } else {
 
-        index = morceauActuel + 1;
+        index =
+            morceauActuel + 1;
 
         while (
-            index < album.morceaux.length &&
-            !estDisponible(album.morceaux[index])
+            index <
+                album.morceaux.length &&
+            !estDisponible(
+                album.morceaux[index]
+            )
         ) {
             index++;
         }
     }
 
-    if (index < album.morceaux.length) {
+    if (
+        index <
+        album.morceaux.length
+    ) {
 
         jouerMorceau(index);
 
-    } else if (modeRepetition === "liste") {
+    } else if (
+        modeRepetition === "liste"
+    ) {
 
         const premierDisponible =
             album.morceaux.findIndex(
-                morceau => estDisponible(morceau)
+                morceau =>
+                    estDisponible(morceau)
             );
 
         if (premierDisponible !== -1) {
-            jouerMorceau(premierDisponible);
+            jouerMorceau(
+                premierDisponible
+            );
         }
     }
 }
@@ -632,36 +851,52 @@ function jouerSuivant() {
    ALEATOIRE
    ========================= */
 
-boutonAleatoire.addEventListener("click", () => {
+boutonAleatoire.addEventListener(
+    "click",
+    () => {
 
-    modeAleatoire = !modeAleatoire;
+        modeAleatoire =
+            !modeAleatoire;
 
-    boutonAleatoire.classList.toggle(
-        "actif",
-        modeAleatoire
-    );
+        boutonAleatoire.classList.toggle(
+            "actif",
+            modeAleatoire
+        );
 
-    boutonAleatoire.textContent =
-        modeAleatoire ? "⤨" : "⇄";
-});
+        boutonAleatoire.textContent =
+            modeAleatoire
+                ? "⤨"
+                : "⇄";
+    }
+);
 
 
 function morceauAleatoire() {
 
-    const morceauxDisponibles = album.morceaux
-        .map((morceau, index) => ({
-            morceau,
-            index
-        }))
-        .filter(element =>
-            estDisponible(element.morceau)
-        );
+    const morceauxDisponibles =
+        album.morceaux
+            .map(
+                (morceau, index) => ({
+                    morceau,
+                    index
+                })
+            )
+            .filter(
+                element =>
+                    estDisponible(
+                        element.morceau
+                    )
+            );
 
-    if (morceauxDisponibles.length === 0) {
+    if (
+        morceauxDisponibles.length === 0
+    ) {
         return -1;
     }
 
-    if (morceauxDisponibles.length === 1) {
+    if (
+        morceauxDisponibles.length === 1
+    ) {
         return morceauxDisponibles[0].index;
     }
 
@@ -677,7 +912,9 @@ function morceauAleatoire() {
                 )
             ].index;
 
-    } while (choix === morceauActuel);
+    } while (
+        choix === morceauActuel
+    );
 
     return choix;
 }
@@ -687,82 +924,105 @@ function morceauAleatoire() {
    REPETITION
    ========================= */
 
-boutonRepetition.addEventListener("click", () => {
+boutonRepetition.addEventListener(
+    "click",
+    () => {
 
-    if (modeRepetition === "aucun") {
+        if (
+            modeRepetition === "aucun"
+        ) {
 
-        modeRepetition = "titre";
+            modeRepetition = "titre";
 
-        boutonRepetition.textContent = "↻¹";
+            boutonRepetition.textContent =
+                "↻¹";
 
-        boutonRepetition.classList.remove(
-            "repetition-liste"
-        );
+            boutonRepetition.classList.remove(
+                "repetition-liste"
+            );
 
-        boutonRepetition.classList.add("actif");
+            boutonRepetition.classList.add(
+                "actif"
+            );
 
-        boutonRepetition.title =
-            "Répéter le titre";
+            boutonRepetition.title =
+                "Répéter le titre";
 
-    } else if (modeRepetition === "titre") {
+        } else if (
+            modeRepetition === "titre"
+        ) {
 
-        modeRepetition = "liste";
+            modeRepetition = "liste";
 
-        boutonRepetition.textContent = "∞";
+            boutonRepetition.textContent =
+                "∞";
 
-        boutonRepetition.classList.remove("actif");
+            boutonRepetition.classList.remove(
+                "actif"
+            );
 
-        boutonRepetition.classList.add(
-            "repetition-liste"
-        );
+            boutonRepetition.classList.add(
+                "repetition-liste"
+            );
 
-        boutonRepetition.title =
-            "Répéter l'album";
+            boutonRepetition.title =
+                "Répéter l'album";
 
-    } else {
+        } else {
 
-        modeRepetition = "aucun";
+            modeRepetition = "aucun";
 
-        boutonRepetition.textContent = "↻";
+            boutonRepetition.textContent =
+                "↻";
 
-        boutonRepetition.classList.remove("actif");
+            boutonRepetition.classList.remove(
+                "actif"
+            );
 
-        boutonRepetition.classList.remove(
-            "repetition-liste"
-        );
+            boutonRepetition.classList.remove(
+                "repetition-liste"
+            );
 
-        boutonRepetition.title =
-            "Répétition désactivée";
+            boutonRepetition.title =
+                "Répétition désactivée";
+        }
     }
-});
+);
 
 
 /* =========================
    FIN DU MORCEAU
    ========================= */
 
-audio.addEventListener("ended", () => {
+audio.addEventListener(
+    "ended",
+    () => {
 
-    if (modeRepetition === "titre") {
+        if (
+            modeRepetition === "titre"
+        ) {
 
-        audio.currentTime = 0;
-        audio.play();
+            audio.currentTime = 0;
+            audio.play();
 
-        return;
+            return;
+        }
+
+        jouerSuivant();
     }
-
-    jouerSuivant();
-});
+);
 
 
 /* =========================
    PROGRESSION
    ========================= */
 
-audio.addEventListener("timeupdate", () => {
-
-    mettreAJourProgression();
-});
+audio.addEventListener(
+    "timeupdate",
+    () => {
+        mettreAJourProgression();
+    }
+);
 
 
 function mettreAJourProgression() {
@@ -772,30 +1032,42 @@ function mettreAJourProgression() {
     }
 
     const pourcentage =
-        (audio.currentTime / audio.duration) * 100;
+        (audio.currentTime /
+            audio.duration) * 100;
 
     progression.style.width =
         pourcentage + "%";
 
     tempsActuel.textContent =
-        formaterTemps(audio.currentTime);
+        formaterTemps(
+            audio.currentTime
+        );
 
     dureeTotale.textContent =
-        formaterTemps(audio.duration);
+        formaterTemps(
+            audio.duration
+        );
 }
 
 
 function formaterTemps(secondes) {
 
-    if (!secondes || isNaN(secondes)) {
+    if (
+        !secondes ||
+        isNaN(secondes)
+    ) {
         return "0:00";
     }
 
     const minutes =
-        Math.floor(secondes / 60);
+        Math.floor(
+            secondes / 60
+        );
 
     const secondesRestantes =
-        Math.floor(secondes % 60)
+        Math.floor(
+            secondes % 60
+        )
             .toString()
             .padStart(2, "0");
 
@@ -807,181 +1079,241 @@ function formaterTemps(secondes) {
    CLIC SUR LA BARRE
    ========================= */
 
-barreProgression.addEventListener("click", event => {
+barreProgression.addEventListener(
+    "click",
+    event => {
 
-    if (!audio.duration) {
-        return;
+        if (!audio.duration) {
+            return;
+        }
+
+        const rectangle =
+            barreProgression
+                .getBoundingClientRect();
+
+        const position =
+            (
+                event.clientX -
+                rectangle.left
+            ) /
+            rectangle.width;
+
+        audio.currentTime =
+            position *
+            audio.duration;
     }
-
-    const rectangle =
-        barreProgression.getBoundingClientRect();
-
-    const position =
-        (event.clientX - rectangle.left) /
-        rectangle.width;
-
-    audio.currentTime =
-        position * audio.duration;
-});
+);
 
 
 /* =========================
    VOLUME
    ========================= */
 
-volume.addEventListener("input", () => {
+volume.addEventListener(
+    "input",
+    () => {
 
-    audio.volume = volume.value;
+        audio.volume =
+            volume.value;
 
-    if (audio.volume > 0) {
-        boutonMuet.textContent = "🔊";
+        if (audio.volume > 0) {
+            boutonMuet.textContent =
+                "🔊";
+        }
     }
-});
+);
 
 
 /* =========================
    MUET
    ========================= */
 
-boutonMuet.addEventListener("click", () => {
+boutonMuet.addEventListener(
+    "click",
+    () => {
 
-    if (audio.muted) {
+        if (audio.muted) {
 
-        audio.muted = false;
+            audio.muted = false;
 
-        audio.volume = volumeAvantMuet;
+            audio.volume =
+                volumeAvantMuet;
 
-        volume.value = volumeAvantMuet;
+            volume.value =
+                volumeAvantMuet;
 
-        boutonMuet.textContent = "🔊";
+            boutonMuet.textContent =
+                "🔊";
 
-    } else {
+        } else {
 
-        volumeAvantMuet = audio.volume;
+            volumeAvantMuet =
+                audio.volume;
 
-        audio.muted = true;
+            audio.muted = true;
 
-        volume.value = 0;
+            volume.value = 0;
 
-        boutonMuet.textContent = "🔇";
+            boutonMuet.textContent =
+                "🔇";
+        }
     }
-});
+);
 
 
 /* =========================
    CLIC SUR LE DISQUE
    ========================= */
 
-const disque = document.querySelector(".disque");
+const disque =
+    document.querySelector(".disque");
 
-disque.addEventListener("click", () => {
+disque.addEventListener(
+    "click",
+    () => {
 
-    if (morceauActuel === -1) {
+        if (morceauActuel === -1) {
 
-        const premierDisponible =
-            album.morceaux.findIndex(
-                morceau => estDisponible(morceau)
-            );
+            const premierDisponible =
+                album.morceaux.findIndex(
+                    morceau =>
+                        estDisponible(morceau)
+                );
 
-        if (premierDisponible !== -1) {
-            jouerMorceau(premierDisponible);
+            if (premierDisponible !== -1) {
+                jouerMorceau(
+                    premierDisponible
+                );
+            }
+
+            return;
         }
 
-        return;
+        if (audio.paused) {
+            audio.play();
+        } else {
+            audio.pause();
+        }
     }
-
-    if (audio.paused) {
-        audio.play();
-    } else {
-        audio.pause();
-    }
-});
+);
 
 
 /* =========================
    ETAT LECTURE / PAUSE
    ========================= */
 
-audio.addEventListener("play", () => {
+audio.addEventListener(
+    "play",
+    () => {
 
-    boutonLecturePause.textContent = "⏸";
-    boutonLecturePause.title = "Pause";
+        boutonLecturePause.textContent =
+            "⏸";
 
-    rotationEnCours = true;
+        boutonLecturePause.title =
+            "Pause";
 
-    if (!animationDisque) {
-        animationDisque =
-            requestAnimationFrame(animerDisque);
+        rotationEnCours = true;
+
+        if (!animationDisque) {
+
+            animationDisque =
+                requestAnimationFrame(
+                    animerDisque
+                );
+        }
     }
-});
+);
 
 
-audio.addEventListener("pause", () => {
+audio.addEventListener(
+    "pause",
+    () => {
 
-    boutonLecturePause.textContent = "▶";
-    boutonLecturePause.title = "Lecture";
+        boutonLecturePause.textContent =
+            "▶";
 
-    rotationEnCours = false;
-});
+        boutonLecturePause.title =
+            "Lecture";
+
+        rotationEnCours = false;
+    }
+);
 
 
 /* =========================
    DUREE DU MORCEAU
    ========================= */
 
-audio.addEventListener("loadedmetadata", () => {
+audio.addEventListener(
+    "loadedmetadata",
+    () => {
 
-    dureeTotale.textContent =
-        formaterTemps(audio.duration);
-});
+        dureeTotale.textContent =
+            formaterTemps(
+                audio.duration
+            );
+    }
+);
 
 
 function chargerDureesDesMorceaux() {
 
     const lignes =
-        document.querySelectorAll(".morceau.disponible");
-
-    album.morceaux.forEach((morceau, index) => {
-
-        if (!estDisponible(morceau)) {
-            return;
-        }
-
-        const ligne = lignes[
-            album.morceaux
-                .slice(0, index + 1)
-                .filter(m => estDisponible(m))
-                .length - 1
-        ];
-
-        if (!ligne) {
-            return;
-        }
-
-        const audioTemporaire = new Audio();
-
-        audioTemporaire.src =
-            morceau.fichier;
-
-        audioTemporaire.addEventListener(
-            "loadedmetadata",
-            () => {
-
-                const duree =
-                    ligne.querySelector(
-                        ".duree-morceau"
-                    );
-
-                if (duree) {
-
-                    duree.textContent =
-                        formaterTemps(
-                            audioTemporaire.duration
-                        );
-                }
-            }
+        document.querySelectorAll(
+            ".morceau.disponible"
         );
-    });
+
+    album.morceaux.forEach(
+        (morceau, index) => {
+
+            if (!estDisponible(morceau)) {
+                return;
+            }
+
+            const ligne =
+                lignes[
+                    album.morceaux
+                        .slice(
+                            0,
+                            index + 1
+                        )
+                        .filter(
+                            m =>
+                                estDisponible(m)
+                        )
+                        .length - 1
+                ];
+
+            if (!ligne) {
+                return;
+            }
+
+            const audioTemporaire =
+                new Audio();
+
+            audioTemporaire.src =
+                morceau.fichier;
+
+            audioTemporaire.addEventListener(
+                "loadedmetadata",
+                () => {
+
+                    const duree =
+                        ligne.querySelector(
+                            ".duree-morceau"
+                        );
+
+                    if (duree) {
+
+                        duree.textContent =
+                            formaterTemps(
+                                audioTemporaire.duration
+                            );
+                    }
+                }
+            );
+        }
+    );
 }
 
 
@@ -990,23 +1322,32 @@ function chargerDureesDesMorceaux() {
    ========================= */
 
 const fenetreParoles =
-    document.getElementById("fenetre-paroles");
+    document.getElementById(
+        "fenetre-paroles"
+    );
 
 const titreParoles =
-    document.getElementById("titre-paroles");
+    document.getElementById(
+        "titre-paroles"
+    );
 
 const texteParoles =
-    document.getElementById("texte-paroles");
+    document.getElementById(
+        "texte-paroles"
+    );
 
 const fermerParoles =
-    document.getElementById("fermer-paroles");
+    document.getElementById(
+        "fermer-paroles"
+    );
 
 
 boutonParolesActuelles.addEventListener(
     "click",
     async () => {
 
-        const index = morceauActuel;
+        const index =
+            morceauActuel;
 
         if (index === -1) {
             return;
@@ -1018,7 +1359,11 @@ boutonParolesActuelles.addEventListener(
         let nomFichier =
             morceau.titre;
 
-        if (idAlbum === "elle-est-moi-acoustique") {
+        if (
+            idAlbum ===
+            "elle-est-moi-acoustique"
+        ) {
+
             nomFichier +=
                 " (version acoustique)";
         }
@@ -1032,6 +1377,7 @@ boutonParolesActuelles.addEventListener(
                 await fetch(chemin);
 
             if (!reponse.ok) {
+
                 throw new Error(
                     "Fichier de paroles introuvable"
                 );
@@ -1080,7 +1426,10 @@ fenetreParoles.addEventListener(
     "click",
     event => {
 
-        if (event.target === fenetreParoles) {
+        if (
+            event.target ===
+            fenetreParoles
+        ) {
 
             fenetreParoles.classList.remove(
                 "ouverte"
@@ -1091,8 +1440,22 @@ fenetreParoles.addEventListener(
 
 
 /* =========================
+   BOUTON ALBUM
+   ========================= */
+
+if (boutonTelechargerAlbum) {
+
+    boutonTelechargerAlbum.addEventListener(
+        "click",
+        telechargerAlbum
+    );
+}
+
+
+/* =========================
    INITIALISATION
    ========================= */
 
 afficherMorceaux();
+
 chargerDureesDesMorceaux();
