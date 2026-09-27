@@ -658,3 +658,16 @@ h1 {
     background: #222;
     color: #fff;
 }
+
+/* Bouton album entièrement téléchargé */
+
+.telecharger-album.album-telecharge {
+    background: #1f8f3a;
+    border-color: #1f8f3a;
+    color: #fff;
+}
+
+.telecharger-album.album-telecharge:hover {
+    background: #176b2b;
+    border-color: #176b2b;
+}
