@@ -1,4 +1,4 @@
-const CACHE_NAME = "gui7laum-v4";
+const CACHE_NAME = "gui7laum-v5";
 const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
