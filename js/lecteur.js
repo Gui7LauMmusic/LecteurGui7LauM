@@ -667,6 +667,25 @@ async function jouerMorceau(index) {
         const fichierEnCache =
             await cache.match(morceau.fichier);
 
+        const horsLigne =
+            !navigator.onLine;
+
+        /*
+         * Hors connexion :
+         * seul un morceau réellement téléchargé
+         * peut être lu.
+         */
+
+        if (horsLigne && !fichierEnCache) {
+
+            alert(
+                "Ce morceau n'est pas téléchargé pour une écoute hors connexion."
+            );
+
+            return;
+        }
+
+
         if (fichierEnCache) {
 
             if (audio._urlLocale) {
@@ -704,7 +723,6 @@ async function jouerMorceau(index) {
         );
     }
 }
-
 
 /* =========================
    SELECTION VISUELLE
