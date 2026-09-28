@@ -12,6 +12,7 @@ const FICHIERS_A_METTRE_EN_CACHE = [
     "./js/lecteur.js"
 ];
 
+
 self.addEventListener("install", event => {
 
     event.waitUntil(
@@ -59,17 +60,17 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
 
-    event.respondWith(
+    const url =
+        new URL(event.request.url);
 
-        caches.match(event.request, {
-            ignoreSearch: true
-        }).then(reponse => {
+    const estAudio =
+        url.pathname.endsWith(".mp3");
 
-            if (reponse) {
-                return reponse;
-            }
+    if (estAudio) {
 
-            return caches.open(CACHE_AUDIO_NAME).then(cache => {
+        event.respondWith(
+
+            caches.open(CACHE_AUDIO_NAME).then(cache => {
 
                 return cache.match(event.request).then(audioEnCache => {
 
@@ -80,9 +81,27 @@ self.addEventListener("fetch", event => {
                     return fetch(event.request);
                 });
 
-            });
+            })
 
+        );
+
+        return;
+    }
+
+
+    event.respondWith(
+
+        caches.match(event.request, {
+            ignoreSearch: true
+        }).then(reponse => {
+
+            if (reponse) {
+                return reponse;
+            }
+
+            return fetch(event.request);
         })
 
     );
+
 });
