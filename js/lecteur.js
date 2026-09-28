@@ -1311,15 +1311,18 @@ audio.addEventListener(
 );
 
 
-function chargerDureesDesMorceaux() {
+async function chargerDureesDesMorceaux() {
 
     const lignes =
         document.querySelectorAll(
             ".morceau.disponible"
         );
 
+    const cache =
+        await caches.open(CACHE_AUDIO_NAME);
+
     album.morceaux.forEach(
-        (morceau, index) => {
+        async (morceau, index) => {
 
             if (!estDisponible(morceau)) {
                 return;
@@ -1343,34 +1346,77 @@ function chargerDureesDesMorceaux() {
                 return;
             }
 
+            const fichierEnCache =
+                await cache.match(
+                    morceau.fichier
+                );
+
             const audioTemporaire =
                 new Audio();
 
-            audioTemporaire.src =
-                morceau.fichier;
+            if (fichierEnCache) {
 
-            audioTemporaire.addEventListener(
-                "loadedmetadata",
-                () => {
+                const blob =
+                    await fichierEnCache.blob();
 
-                    const duree =
-                        ligne.querySelector(
-                            ".duree-morceau"
-                        );
+                const urlLocale =
+                    URL.createObjectURL(
+                        blob
+                    );
 
-                    if (duree) {
+                audioTemporaire.src =
+                    urlLocale;
 
-                        duree.textContent =
-                            formaterTemps(
-                                audioTemporaire.duration
+                audioTemporaire.addEventListener(
+                    "loadedmetadata",
+                    () => {
+
+                        const duree =
+                            ligne.querySelector(
+                                ".duree-morceau"
                             );
+
+                        if (duree) {
+
+                            duree.textContent =
+                                formaterTemps(
+                                    audioTemporaire.duration
+                                );
+                        }
+
+                        URL.revokeObjectURL(
+                            urlLocale
+                        );
                     }
-                }
-            );
+                );
+
+            } else {
+
+                audioTemporaire.src =
+                    morceau.fichier;
+
+                audioTemporaire.addEventListener(
+                    "loadedmetadata",
+                    () => {
+
+                        const duree =
+                            ligne.querySelector(
+                                ".duree-morceau"
+                            );
+
+                        if (duree) {
+
+                            duree.textContent =
+                                formaterTemps(
+                                    audioTemporaire.duration
+                                );
+                        }
+                    }
+                );
+            }
         }
     );
 }
-
 
 /* =========================
    PAROLES
