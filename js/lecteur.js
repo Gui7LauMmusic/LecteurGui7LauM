@@ -636,7 +636,7 @@ async function afficherMorceaux() {
    LECTURE D'UN MORCEAU
    ========================= */
 
-function jouerMorceau(index) {
+async function jouerMorceau(index) {
 
     const morceau = album.morceaux[index];
 
@@ -653,19 +653,56 @@ function jouerMorceau(index) {
 
     morceauActuel = index;
 
-    audio.src = morceau.fichier;
-
     morceauActuelElement.textContent =
         morceau.titre;
 
     boutonParolesActuelles.dataset.index =
         index;
 
-    audio.load();
+    try {
 
-    audio.play();
+        const cache =
+            await caches.open(CACHE_AUDIO_NAME);
 
-    mettreAJourSelection();
+        const fichierEnCache =
+            await cache.match(morceau.fichier);
+
+        if (fichierEnCache) {
+
+            if (audio._urlLocale) {
+                URL.revokeObjectURL(
+                    audio._urlLocale
+                );
+            }
+
+            const blob =
+                await fichierEnCache.blob();
+
+            audio._urlLocale =
+                URL.createObjectURL(blob);
+
+            audio.src =
+                audio._urlLocale;
+
+        } else {
+
+            audio.src =
+                morceau.fichier;
+        }
+
+        audio.load();
+
+        await audio.play();
+
+        mettreAJourSelection();
+
+    } catch (erreur) {
+
+        console.error(
+            "Impossible de lire le morceau :",
+            erreur
+        );
+    }
 }
 
 
