@@ -671,3 +671,24 @@ h1 {
     background: #176b2b;
     border-color: #176b2b;
 }
+
+/* =========================
+   ICONE PARTAGE
+   ========================= */
+
+.icone-partager {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: auto;
+}
+
+.icone-partager circle {
+    fill: currentColor;
+}
+
+.icone-partager line {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
