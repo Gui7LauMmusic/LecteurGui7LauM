@@ -51,6 +51,7 @@ const boutonLecturePause = document.getElementById("lecture-pause");
 const boutonStop = document.getElementById("stop");
 const boutonPrecedent = document.getElementById("precedent");
 const boutonSuivant = document.getElementById("suivant");
+const boutonPartager = document.getElementById("partager");
 const boutonAleatoire = document.getElementById("aleatoire");
 const boutonRepetition = document.getElementById("repetition");
 const boutonParolesActuelles =
@@ -1538,6 +1539,73 @@ fenetreParoles.addEventListener(
         }
     }
 );
+
+/* =========================
+   PARTAGE
+   ========================= */
+
+if (boutonPartager) {
+
+    boutonPartager.addEventListener(
+        "click",
+        async () => {
+
+            const url =
+                window.location.href;
+
+            const titre =
+                album.titre;
+
+            const texte =
+                `Écoute "${titre}" par ${artiste.nom}`;
+
+            if (navigator.share) {
+
+                try {
+
+                    await navigator.share({
+                        title: titre,
+                        text: texte,
+                        url: url
+                    });
+
+                } catch (erreur) {
+
+                    if (erreur.name !== "AbortError") {
+
+                        console.error(
+                            "Erreur lors du partage :",
+                            erreur
+                        );
+
+                    }
+                }
+
+            } else {
+
+                try {
+
+                    await navigator.clipboard.writeText(url);
+
+                    alert(
+                        "Lien du lecteur copié dans le presse-papiers."
+                    );
+
+                } catch (erreur) {
+
+                    console.error(
+                        "Impossible de copier le lien :",
+                        erreur
+                    );
+
+                }
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =========================
