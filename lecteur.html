@@ -166,9 +166,102 @@
     <script src="js/lecteur.js"></script>
 
     <script>
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js");
+if ("serviceWorker" in navigator) {
+
+    let rechargementEnAttente = false;
+    let rechargementLance = false;
+
+    const controleurDejaPresent =
+        !!navigator.serviceWorker.controller;
+
+    function appliquerMiseAJour() {
+
+        if (!rechargementEnAttente || rechargementLance) {
+            return;
+        }
+
+        const audio = document.getElementById("audio");
+
+        if (audio && !audio.paused && !audio.ended) {
+            return;
+        }
+
+        rechargementLance = true;
+        window.location.reload();
     }
+
+    navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        () => {
+
+            if (controleurDejaPresent) {
+                rechargementEnAttente = true;
+                appliquerMiseAJour();
+            }
+
+        }
+    );
+
+    window.addEventListener("load", async () => {
+
+        try {
+
+            const registration =
+                await navigator.serviceWorker.register("./sw.js", {
+                    updateViaCache: "none"
+                });
+
+            await registration.update();
+
+        } catch (erreur) {
+
+            console.error(
+                "Vérification de mise à jour impossible :",
+                erreur
+            );
+
+        }
+
+    });
+
+    document.addEventListener("visibilitychange", async () => {
+
+        if (document.visibilityState !== "visible") {
+            return;
+        }
+
+        try {
+
+            const registration =
+                await navigator.serviceWorker.getRegistration();
+
+            if (registration) {
+                await registration.update();
+            }
+
+        } catch (erreur) {
+
+            console.error(
+                "Vérification de mise à jour impossible :",
+                erreur
+            );
+
+        }
+
+        appliquerMiseAJour();
+
+    });
+
+    const audio = document.getElementById("audio");
+
+    if (audio) {
+
+        audio.addEventListener("pause", appliquerMiseAJour);
+        audio.addEventListener("ended", appliquerMiseAJour);
+
+    }
+
+}
 </script>
 
 </body>
