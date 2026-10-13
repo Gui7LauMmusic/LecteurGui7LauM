@@ -692,3 +692,28 @@ h1 {
     stroke-width: 2;
     stroke-linecap: round;
 }
+
+/* =========================
+   BOUTONS DE LIKES
+   ========================= */
+
+.bouton-like {
+    flex-shrink: 0;
+    margin-left: 8px;
+    padding: 4px 6px;
+    border: none;
+    background: transparent;
+    color: #777;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.bouton-like.like-actif {
+    color: #e63946;
+}
+
+.bouton-like:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}

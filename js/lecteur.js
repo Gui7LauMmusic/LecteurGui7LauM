@@ -1,3 +1,5 @@
+let likesInitialises = false;
+
 const parametres = new URLSearchParams(window.location.search);
 
 const idArtiste = parametres.get("artiste");
@@ -532,6 +534,10 @@ async function telechargerAlbum() {
    ========================= */
 
 async function afficherMorceaux() {
+if (typeof likesInitialises === "undefined" || !likesInitialises) {
+        await initialiserLikes();
+        likesInitialises = true;
+    }
 
     listeMorceaux.innerHTML = "";
 
@@ -556,6 +562,46 @@ async function afficherMorceaux() {
             `;
 
             ligne.appendChild(duree);
+const idLike =
+                `${idAlbum}-${String(index + 1).padStart(2, "0")}`;
+
+            const boutonLike = document.createElement("button");
+            boutonLike.className = "bouton-like";
+            boutonLike.type = "button";
+
+            const etatLike = obtenirLike(idLike);
+
+            boutonLike.textContent =
+                `${etatLike.actif ? "♥" : "♡"} ${etatLike.compte}`;
+
+            boutonLike.classList.toggle(
+                "like-actif",
+                etatLike.actif
+            );
+
+            boutonLike.title = "J'aime ce morceau";
+
+            boutonLike.addEventListener("click", async event => {
+                event.stopPropagation();
+
+                boutonLike.disabled = true;
+
+                const nouvelEtat = await changerLike(idLike);
+
+                if (nouvelEtat) {
+                    boutonLike.textContent =
+                        `${nouvelEtat.actif ? "♥" : "♡"} ${nouvelEtat.compte}`;
+
+                    boutonLike.classList.toggle(
+                        "like-actif",
+                        nouvelEtat.actif
+                    );
+                }
+
+                boutonLike.disabled = false;
+            });
+
+            ligne.appendChild(boutonLike);
 
             const boutonTelechargement =
                 document.createElement("button");
