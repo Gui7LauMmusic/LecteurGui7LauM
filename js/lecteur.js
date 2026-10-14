@@ -1680,6 +1680,80 @@ if (boutonPartager) {
 }
 
 /* =========================
+   PARTAGE DE L'ALBUM
+   ========================= */
+
+const boutonPartagerAlbum =
+    document.getElementById("partager-album");
+
+if (boutonPartagerAlbum) {
+
+    boutonPartagerAlbum.addEventListener(
+    "click",
+    async (event) => {
+
+        event.preventDefault();
+
+boutonPartagerAlbum.addEventListener(
+        "click",
+        async () => {
+
+            const urlPartage = new URL(
+                window.location.href
+            );
+
+            urlPartage.searchParams.delete("morceau");
+
+            const url = urlPartage.href;
+
+            const titre = album.titre;
+
+            const texte =
+                `Écoute l'album "${album.titre}" par ${artiste.nom}`;
+
+            if (navigator.share) {
+
+                try {
+
+                    await navigator.share({
+                        title: titre,
+                        text: texte,
+                        url: url
+                    });
+
+                } catch (erreur) {
+
+                    if (erreur.name !== "AbortError") {
+                        console.error(
+                            "Erreur lors du partage de l'album :",
+                            erreur
+                        );
+                    }
+                }
+
+            } else {
+
+                try {
+
+                    await navigator.clipboard.writeText(url);
+
+                    alert(
+                        "Lien de l'album copié dans le presse-papiers."
+                    );
+
+                } catch (erreur) {
+
+                    console.error(
+                        "Impossible de copier le lien de l'album :",
+                        erreur
+                    );
+                }
+            }
+        }
+    );
+}
+
+/* =========================
    BOUTON ALBUM
    ========================= */
 
