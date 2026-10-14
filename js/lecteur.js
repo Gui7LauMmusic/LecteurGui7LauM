@@ -1689,14 +1689,10 @@ const boutonPartagerAlbum =
 if (boutonPartagerAlbum) {
 
     boutonPartagerAlbum.addEventListener(
-    "click",
-    async (event) => {
-
-        event.preventDefault();
-
-boutonPartagerAlbum.addEventListener(
         "click",
-        async () => {
+        async (event) => {
+
+            event.preventDefault();
 
             const urlPartage = new URL(
                 window.location.href
