@@ -1,4 +1,4 @@
-const CACHE_NAME = "gui7laum-v6";
+const CACHE_NAME = "gui7laum-v7";
 const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
@@ -10,6 +10,7 @@ const FICHIERS_A_METTRE_EN_CACHE = [
     "./css/style.css",
     "./js/artistes.js",
     "./js/lecteur.js"
+    "./js/likes.js"
 ];
 
 
@@ -100,7 +101,10 @@ self.addEventListener("fetch", event => {
 
             try {
 
-                const reponse = await fetch(requete);
+                const requeteFraiche = new Request(requete, {
+    cache: "no-cache"
+});
+const reponse = await fetch(requeteFraiche);
 
                 if (reponse.ok) {
 
