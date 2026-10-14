@@ -1596,14 +1596,40 @@ if (boutonPartager) {
         "click",
         async () => {
 
-            const url =
-                window.location.href;
+            const urlPartage = new URL(
+                window.location.href
+            );
 
-            const titre =
-                album.titre;
+            let titre = album.titre;
+            let texte = `Écoute "${album.titre}" par ${artiste.nom}`;
 
-            const texte =
-                `Écoute "${titre}" par ${artiste.nom}`;
+            if (
+                morceauActuel >= 0 &&
+                album.morceaux[morceauActuel]
+            ) {
+
+                const morceau =
+                    album.morceaux[morceauActuel];
+
+                urlPartage.searchParams.set(
+                    "morceau",
+                    morceauActuel
+                );
+
+                titre = morceau.titre;
+
+                texte =
+                    `Écoute "${morceau.titre}" par ${artiste.nom}`;
+
+            } else {
+
+                urlPartage.searchParams.delete(
+                    "morceau"
+                );
+
+            }
+
+            const url = urlPartage.href;
 
             if (navigator.share) {
 
@@ -1634,7 +1660,7 @@ if (boutonPartager) {
                     await navigator.clipboard.writeText(url);
 
                     alert(
-                        "Lien du lecteur copié dans le presse-papiers."
+                        "Lien copié dans le presse-papiers."
                     );
 
                 } catch (erreur) {
@@ -1652,7 +1678,6 @@ if (boutonPartager) {
     );
 
 }
-
 
 /* =========================
    BOUTON ALBUM
@@ -1676,6 +1701,22 @@ async function initialiserLecteur() {
     await afficherMorceaux();
 
     chargerDureesDesMorceaux();
+
+    const indexMorceau = parametres.get("morceau");
+
+    if (indexMorceau !== null) {
+
+        const index = Number(indexMorceau);
+
+        if (
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < album.morceaux.length &&
+            estDisponible(album.morceaux[index])
+        ) {
+            jouerMorceau(index);
+        }
+    }
 }
 
 initialiserLecteur();
