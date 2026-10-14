@@ -677,8 +677,8 @@ h1 {
    ========================= */
 
 .icone-partager {
-    width: 18px;
-    height: 18px;
+    width: 26px;
+    height: 26px;
     display: block;
     margin: auto;
 }
@@ -689,7 +689,7 @@ h1 {
 
 .icone-partager line {
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 2.5;
     stroke-linecap: round;
 }
 
@@ -723,4 +723,74 @@ h1 {
 #partager-album {
     display: block;
     text-align: center;
+}
+
+/* =========================
+LES 7 AILES - COULEURS DES COMMANDES
+========================= */
+
+#precedent {
+background: #E53935;
+}
+
+#lecture-pause {
+background: #F57C00;
+}
+
+#stop {
+background: #D6AD00;
+}
+
+#suivant {
+background: #2E9D50;
+}
+
+#aleatoire {
+background: #1976D2;
+}
+
+#repetition {
+background: #4545B5;
+}
+
+#partager {
+background: #853DB8;
+}
+
+/* Survol des boutons */
+
+#precedent,
+#lecture-pause,
+#stop,
+#suivant,
+#aleatoire,
+#repetition,
+#partager {
+filter: brightness(1.15);
+}
+
+/* Icônes SVG des commandes */
+
+.icone-commande {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin: auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.icone-commande text {
+    fill: currentColor;
+    stroke: none;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.icone-commande.icone-infini {
+    width: 32px;
+    height: 32px;
 }
