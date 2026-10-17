@@ -83,6 +83,17 @@ let modeAleatoire = false;
 let ordreAleatoire = [];
 let positionAleatoire = -1;
 
+// Reprise de lecture : la sauvegarde est propre à chaque album.
+function sauvegarderProgression() {
+    if (!idAlbum || morceauActuel < 0) return;
+    try {
+        localStorage.setItem("dernierMorceau_" + idAlbum, String(morceauActuel));
+        localStorage.setItem("dernierePosition_" + idAlbum, String(audio.currentTime || 0));
+    } catch (erreur) {
+        console.warn("Impossible de sauvegarder la progression :", erreur);
+    }
+}
+
 let modeRepetition = "aucun";
 
 let volumeAvantMuet = 1;
@@ -852,6 +863,7 @@ boutonLecturePause.addEventListener(
         if (audio.paused) {
             audio.play();
         } else {
+            sauvegarderProgression();
             audio.pause();
         }
     }
@@ -1120,6 +1132,14 @@ boutonRepetition.addEventListener(
 audio.addEventListener(
     "ended",
     () => {
+        try {
+            if (idAlbum) {
+                localStorage.setItem("dernierMorceau_" + idAlbum, String(morceauActuel));
+                localStorage.setItem("dernierePosition_" + idAlbum, "0");
+            }
+        } catch (erreur) {
+            console.warn("Impossible de sauvegarder la fin du morceau :", erreur);
+        }
 
         if (
             modeRepetition === "titre"
@@ -1140,12 +1160,12 @@ audio.addEventListener(
    PROGRESSION
    ========================= */
 
-audio.addEventListener(
-    "timeupdate",
-    () => {
-        mettreAJourProgression();
-    }
-);
+audio.addEventListener("timeupdate", () => {
+    mettreAJourProgression();
+    sauvegarderProgression();
+});
+
+window.addEventListener("pagehide", sauvegarderProgression);
 
 
 function mettreAJourProgression() {
@@ -1790,26 +1810,104 @@ if (boutonTelechargerAlbum) {
    INITIALISATION
    ========================= */
 
+async function chargerMorceauSansLecture(index, positionInitiale = 0) {
+    const morceau = album.morceaux[index];
+    if (!estDisponible(morceau)) return false;
+
+    morceauActuel = index;
+    synchroniserPositionAleatoire(index, true);
+    morceauActuelElement.textContent = morceau.titre;
+    boutonParolesActuelles.dataset.index = index;
+
+    try {
+        const cache = await caches.open(CACHE_AUDIO_NAME);
+        const fichierEnCache = await cache.match(morceau.fichier);
+        if (!navigator.onLine && !fichierEnCache) {
+            mettreAJourSelection();
+            return true;
+        }
+
+        if (fichierEnCache) {
+            if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
+            audio._urlLocale = URL.createObjectURL(await fichierEnCache.blob());
+            audio.src = audio._urlLocale;
+        } else {
+            audio.src = morceau.fichier;
+        }
+
+        if (positionInitiale > 0) {
+            const restaurerPosition = () => {
+                if (morceauActuel !== index || !Number.isFinite(positionInitiale)) return;
+                const limite = Number.isFinite(audio.duration) && audio.duration > 0
+                    ? Math.max(0, audio.duration - 0.5)
+                    : positionInitiale;
+                audio.currentTime = Math.min(positionInitiale, limite);
+                mettreAJourProgression();
+                sauvegarderProgression();
+            };
+
+            audio.addEventListener("loadedmetadata", restaurerPosition, { once: true });
+            audio.load();
+            if (audio.readyState >= 1) restaurerPosition();
+        } else {
+            audio.load();
+        }
+
+        mettreAJourSelection();
+        return true;
+    } catch (erreur) {
+        console.warn("Impossible de préparer le morceau au démarrage :", erreur);
+        mettreAJourSelection();
+        return false;
+    }
+}
+
 async function initialiserLecteur() {
-
     await afficherMorceaux();
-
     chargerDureesDesMorceaux();
 
     const indexMorceau = parametres.get("morceau");
-
     if (indexMorceau !== null) {
-
         const index = Number(indexMorceau);
-
         if (
             Number.isInteger(index) &&
             index >= 0 &&
             index < album.morceaux.length &&
             estDisponible(album.morceaux[index])
         ) {
-            jouerMorceau(index);
+            await jouerMorceau(index);
+            return;
         }
+    }
+
+    let indexReprise = -1;
+    let positionReprise = 0;
+    try {
+        const morceauSauvegarde = localStorage.getItem("dernierMorceau_" + idAlbum);
+        const positionSauvegardee = localStorage.getItem("dernierePosition_" + idAlbum);
+        if (morceauSauvegarde !== null) {
+            const index = Number(morceauSauvegarde);
+            if (
+                Number.isInteger(index) &&
+                index >= 0 &&
+                index < album.morceaux.length &&
+                estDisponible(album.morceaux[index])
+            ) {
+                indexReprise = index;
+                const position = Number(positionSauvegardee);
+                positionReprise = Number.isFinite(position) && position > 0 ? position : 0;
+            }
+        }
+    } catch (erreur) {
+        console.warn("Impossible de lire la progression sauvegardée :", erreur);
+    }
+
+    if (indexReprise === -1) {
+        indexReprise = album.morceaux.findIndex(morceau => estDisponible(morceau));
+    }
+
+    if (indexReprise !== -1) {
+        await chargerMorceauSansLecture(indexReprise, positionReprise);
     }
 }
 

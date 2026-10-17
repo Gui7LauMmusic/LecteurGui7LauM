@@ -1,4 +1,4 @@
-const CACHE_NAME = "gui7laum-v9";
+const CACHE_NAME = "gui7laum-v10";
 // Ne pas changer ce nom : il contient les téléchargements hors ligne de l'utilisateur.
 const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
 
