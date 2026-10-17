@@ -467,629 +467,443 @@ async function telechargerAlbum() {
             console.error(erreur);
 
             alert(
-                "Impossible de supprimer le téléchargement de l'album."
-            );
-        }
 
-    } else {
-
-        boutonTelechargerAlbum.textContent =
-            "⏳ Téléchargement...";
-
-        try {
-
-            const morceauxDisponibles =
-                album.morceaux.filter(morceau =>
-                    estDisponible(morceau)
-                );
-
-            const cache =
-                await caches.open(CACHE_AUDIO_NAME);
-
-            for (const morceau of morceauxDisponibles) {
-
-                const dejaTelecharge =
-                    await cache.match(
-                        morceau.fichier
-                    );
-
-                if (dejaTelecharge) {
-                    continue;
-                }
-
-                const reponse =
-                    await fetch(morceau.fichier);
-
-                if (!reponse.ok) {
-                    throw new Error(
-                        "Impossible de télécharger : " +
-                        morceau.fichier
-                    );
-                }
-
-                await cache.put(
-                    morceau.fichier,
-                    reponse.clone()
-                );
-
-                await mettreAJourPastillesTelechargement();
-            }
-
-        } catch (erreur) {
-
-            console.error(erreur);
-
-            alert(
-                "Impossible de télécharger tout l’album. Vérifie ta connexion Internet."
-            );
-        }
-    }
-
-    boutonTelechargerAlbum.disabled = false;
-
-    await mettreAJourPastillesTelechargement();
-    await mettreAJourBoutonAlbum();
+"Impossible de supprimer le téléchargement de l'album."
+);
 }
-
-
+} else {
+boutonTelechargerAlbum.textContent =
+"⏳ Téléchargement...";
+try {
+const morceauxDisponibles =
+album.morceaux.filter(morceau =>
+estDisponible(morceau)
+);
+const cache =
+await caches.open(CACHE_AUDIO_NAME);
+for (const morceau of morceauxDisponibles) {
+const dejaTelecharge =
+await cache.match(
+morceau.fichier
+);
+if (dejaTelecharge) {
+continue;
+}
+const reponse =
+await fetch(morceau.fichier);
+if (!reponse.ok) {
+throw new Error(
+"Impossible de télécharger : " +
+morceau.fichier
+);
+}
+await cache.put(
+morceau.fichier,
+reponse.clone()
+);
+await mettreAJourPastillesTelechargement();
+}
+} catch (erreur) {
+console.error(erreur);
+alert(
+"Impossible de télécharger tout l’album. Vérifie ta connexion Internet."
+);
+}
+}
+boutonTelechargerAlbum.disabled = false;
+await mettreAJourPastillesTelechargement();
+await mettreAJourBoutonAlbum();
+}
 /* =========================
-   AFFICHAGE DES MORCEAUX
-   ========================= */
-
+AFFICHAGE DES MORCEAUX
+========================= */
 async function afficherMorceaux() {
-    // Afficher le lecteur sans attendre Supabase : un réseau lent ou
-    // indisponible ne doit pas empêcher l'ouverture d'un lien partagé.
-    const lancerInitialisationLikes = !likesInitialises;
-    likesInitialises = true;
-
-    listeMorceaux.innerHTML = "";
-
-    album.morceaux.forEach((morceau, index) => {
-
-        const ligne = document.createElement("div");
-
-        ligne.className = "morceau";
-
-        if (estDisponible(morceau)) {
-
-            ligne.classList.add("disponible");
-
-            const duree = document.createElement("span");
-
-            duree.className =
-                "duree-morceau";
-
-            ligne.innerHTML = `
-                <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
-                <span class="titre">${morceau.titre}</span>
-            `;
-
-            ligne.appendChild(duree);
+// Afficher le lecteur sans attendre Supabase : un réseau lent ou
+// indisponible ne doit pas empêcher l'ouverture d'un lien partagé.
+const lancerInitialisationLikes = !likesInitialises;
+likesInitialises = true;
+listeMorceaux.innerHTML = "";
+album.morceaux.forEach((morceau, index) => {
+const ligne = document.createElement("div");
+ligne.className = "morceau";
+if (estDisponible(morceau)) {
+ligne.classList.add("disponible");
+const duree = document.createElement("span");
+duree.className =
+"duree-morceau";
+ligne.innerHTML = <span class="numero">${String(index + 1).padStart(2, "0")}.</span> <span class="titre">${morceau.titre}</span>;
+ligne.appendChild(duree);
 const idLike =
-                `${idAlbum}-${String(index + 1).padStart(2, "0")}`;
-
-            const boutonLike = document.createElement("button");
-            boutonLike.className = "bouton-like";
-            boutonLike.dataset.likeId = idLike;
-            boutonLike.type = "button";
-
-            const etatLike = obtenirLike(idLike);
-
-            boutonLike.textContent =
-                `${etatLike.actif ? "♥" : "♡"} ${etatLike.compte}`;
-
-            boutonLike.classList.toggle(
-                "like-actif",
-                etatLike.actif
-            );
-
-            boutonLike.title = "J'aime ce morceau";
-
-            boutonLike.addEventListener("click", async event => {
-                event.stopPropagation();
-
-                boutonLike.disabled = true;
-
-                if (promesseInitialisationLikes) {
-                    await promesseInitialisationLikes;
-                }
-
-                const nouvelEtat = await changerLike(idLike);
-
-                if (nouvelEtat) {
-                    boutonLike.textContent =
-                        `${nouvelEtat.actif ? "♥" : "♡"} ${nouvelEtat.compte}`;
-
-                    boutonLike.classList.toggle(
-                        "like-actif",
-                        nouvelEtat.actif
-                    );
-                }
-
-                boutonLike.disabled = false;
-            });
-
-            ligne.appendChild(boutonLike);
-
-            const boutonTelechargement =
-                document.createElement("button");
-
-            boutonTelechargement.className =
-                "bouton-telechargement";
-
-            boutonTelechargement.dataset.index =
-                index;
-
-            boutonTelechargement.textContent =
-                "⚪";
-
-            boutonTelechargement.title =
-                "Télécharger pour écouter hors connexion";
-
-            boutonTelechargement.addEventListener(
-                "click",
-                event => {
-
-                    event.stopPropagation();
-
-                    changerEtatTelechargement(
-                        morceau,
-                        boutonTelechargement
-                    );
-                }
-            );
-
-            ligne.appendChild(
-                boutonTelechargement
-            );
-
-            ligne.addEventListener(
-                "click",
-                () => {
-                    jouerMorceau(index);
-                }
-            );
-
-        } else {
-
-            ligne.classList.add("a-venir");
-
-            const date =
-                new Date(
-                    morceau.date + "T00:00:00"
-                );
-
-            const dateFormatee =
-                date.toLocaleDateString(
-                    "fr-FR",
-                    {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                    }
-                );
-
-            ligne.innerHTML = `
-                <span class="numero">${String(index + 1).padStart(2, "0")}.</span>
-                <span class="date-sortie">${dateFormatee}</span>
-                <span class="cadenas">🔒</span>
-            `;
-        }
-
-        listeMorceaux.appendChild(ligne);
-    });
-
-    // Les informations de téléchargement sont secondaires : elles ne
-    // doivent pas retarder la sélection d'un morceau via son URL.
-    mettreAJourPastillesTelechargement().catch(erreur =>
-        console.warn("État des téléchargements indisponible :", erreur)
-    );
-    mettreAJourBoutonAlbum().catch(erreur =>
-        console.warn("État du téléchargement de l'album indisponible :", erreur)
-    );
-
-    mettreAJourSelection();
-
-    if (lancerInitialisationLikes) {
-        promesseInitialisationLikes = initialiserLikes().then(() => {
-            document.querySelectorAll(".bouton-like").forEach(bouton => {
-                const etat = obtenirLike(bouton.dataset.likeId);
-                bouton.textContent = `${etat.actif ? "♥" : "♡"} ${etat.compte}`;
-                bouton.classList.toggle("like-actif", etat.actif);
-            });
-        }).catch(erreur => {
-            console.warn("Likes indisponibles :", erreur);
-        });
-    }
+${idAlbum}-${String(index + 1).padStart(2, "0")};
+const boutonLike = document.createElement("button");
+boutonLike.className = "bouton-like";
+boutonLike.dataset.likeId = idLike;
+boutonLike.type = "button";
+const etatLike = obtenirLike(idLike);
+boutonLike.textContent =
+${etatLike.actif ? "♥" : "♡"} ${etatLike.compte};
+boutonLike.classList.toggle(
+"like-actif",
+etatLike.actif
+);
+boutonLike.title = "J'aime ce morceau";
+boutonLike.addEventListener("click", async event => {
+event.stopPropagation();
+boutonLike.disabled = true;
+if (promesseInitialisationLikes) {
+await promesseInitialisationLikes;
 }
-
-
+const nouvelEtat = await changerLike(idLike);
+if (nouvelEtat) {
+boutonLike.textContent =
+${nouvelEtat.actif ? "♥" : "♡"} ${nouvelEtat.compte};
+boutonLike.classList.toggle(
+"like-actif",
+nouvelEtat.actif
+);
+}
+boutonLike.disabled = false;
+});
+ligne.appendChild(boutonLike);
+const boutonTelechargement =
+document.createElement("button");
+boutonTelechargement.className =
+"bouton-telechargement";
+boutonTelechargement.dataset.index =
+index;
+boutonTelechargement.textContent =
+"⚪";
+boutonTelechargement.title =
+"Télécharger pour écouter hors connexion";
+boutonTelechargement.addEventListener(
+"click",
+event => {
+event.stopPropagation();
+changerEtatTelechargement(
+morceau,
+boutonTelechargement
+);
+}
+);
+ligne.appendChild(
+boutonTelechargement
+);
+ligne.addEventListener(
+"click",
+() => {
+jouerMorceau(index);
+}
+);
+} else {
+ligne.classList.add("a-venir");
+const date =
+new Date(
+morceau.date + "T00:00:00"
+);
+const dateFormatee =
+date.toLocaleDateString(
+"fr-FR",
+{
+day: "2-digit",
+month: "2-digit",
+year: "numeric"
+}
+);
+ligne.innerHTML = <span class="numero">${String(index + 1).padStart(2, "0")}.</span> <span class="date-sortie">${dateFormatee}</span> <span class="cadenas">🔒</span>;
+}
+listeMorceaux.appendChild(ligne);
+});
+// Les informations de téléchargement sont secondaires : elles ne
+// doivent pas retarder la sélection d'un morceau via son URL.
+mettreAJourPastillesTelechargement().catch(erreur =>
+console.warn("État des téléchargements indisponible :", erreur)
+);
+mettreAJourBoutonAlbum().catch(erreur =>
+console.warn("État du téléchargement de l'album indisponible :", erreur)
+);
+mettreAJourSelection();
+if (lancerInitialisationLikes) {
+promesseInitialisationLikes = initialiserLikes().then(() => {
+document.querySelectorAll(".bouton-like").forEach(bouton => {
+const etat = obtenirLike(bouton.dataset.likeId);
+bouton.textContent = ${etat.actif ? "♥" : "♡"} ${etat.compte};
+bouton.classList.toggle("like-actif", etat.actif);
+});
+}).catch(erreur => {
+console.warn("Likes indisponibles :", erreur);
+});
+}
+}
 /* =========================
-   LECTURE D'UN MORCEAU
-   ========================= */
-
+LECTURE D'UN MORCEAU
+========================= */
 async function jouerMorceau(index, conserverOrdreAleatoire = false) {
-
-    const morceau = album.morceaux[index];
-
-    if (!estDisponible(morceau)) {
-        return;
-    }
-
-    rotationEnCours = false;
-    angleDisque = 0;
-    derniereRotation = null;
-
-    pochette.style.transform =
-        "rotate(0deg)";
-
-    morceauActuel = index;
-    synchroniserPositionAleatoire(index, !conserverOrdreAleatoire);
-
-    morceauActuelElement.textContent =
-        morceau.titre;
-
-    boutonParolesActuelles.dataset.index =
-        index;
-
-    try {
-
-        const cache =
-            await caches.open(CACHE_AUDIO_NAME);
-
-        const fichierEnCache =
-            await cache.match(morceau.fichier);
-
-        const horsLigne =
-            !navigator.onLine;
-
-        /*
-         * Hors connexion :
-         * seul un morceau réellement téléchargé
-         * peut être lu.
-         */
-
-        if (horsLigne && !fichierEnCache) {
-
-            alert(
-                "Ce morceau n'est pas téléchargé pour une écoute hors connexion."
-            );
-
-            return;
-        }
-
-
-        if (fichierEnCache) {
-
-            if (audio._urlLocale) {
-                URL.revokeObjectURL(
-                    audio._urlLocale
-                );
-            }
-
-            const blob =
-                await fichierEnCache.blob();
-
-            audio._urlLocale =
-                URL.createObjectURL(blob);
-
-            audio.src =
-                audio._urlLocale;
-
-        } else {
-
-            audio.src =
-                morceau.fichier;
-        }
-
-        audio.load();
-
-        try {
-            await audio.play();
-            boutonLecturePause.title = "Pause";
-            boutonLecturePause.classList.remove("clignotant-alerte");
-        } catch (erreurLecture) {
-            if (erreurLecture.name === "NotAllowedError") {
-                // Le navigateur a bloqué le son : on fait clignoter le bouton Play pour guider l'utilisateur
-                boutonLecturePause.title = "Clique ici pour lancer la musique !";
-                boutonLecturePause.classList.add("clignotant-alerte");
-            } else {
-                throw erreurLecture;
-            }
-        }
-
-        mettreAJourSelection();
-
-    } catch (erreur) {
-        console.error("Impossible de lire le morceau :", erreur);
-    }
+const morceau = album.morceaux[index];
+if (!estDisponible(morceau)) {
+return;
 }
-
+rotationEnCours = false;
+angleDisque = 0;
+derniereRotation = null;
+pochette.style.transform =
+"rotate(0deg)";
+morceauActuel = index;
+synchroniserPositionAleatoire(index, !conserverOrdreAleatoire);
+morceauActuelElement.textContent =
+morceau.titre;
+boutonParolesActuelles.dataset.index =
+index;
+try {
+const cache =
+await caches.open(CACHE_AUDIO_NAME);
+const fichierEnCache =
+await cache.match(morceau.fichier);
+const horsLigne =
+!navigator.onLine;
+/*
+* Hors connexion :
+* seul un morceau réellement téléchargé
+* peut être lu.
+*/
+if (horsLigne && !fichierEnCache) {
+alert(
+"Ce morceau n'est pas téléchargé pour une écoute hors connexion."
+);
+return;
+}
+if (fichierEnCache) {
+if (audio._urlLocale) {
+URL.revokeObjectURL(
+audio._urlLocale
+);
+}
+const blob =
+await fichierEnCache.blob();
+audio._urlLocale =
+URL.createObjectURL(blob);
+audio.src =
+audio._urlLocale;
+} else {
+audio.src =
+morceau.fichier;
+}
+audio.load();
+try {
+await audio.play();
+boutonLecturePause.title = "Pause";
+boutonLecturePause.classList.remove("clignotant-alerte");
+} catch (erreurLecture) {
+if (erreurLecture.name === "NotAllowedError") {
+// Le navigateur a bloqué le son : on fait clignoter le bouton Play pour guider l'utilisateur
+boutonLecturePause.title = "Clique ici pour lancer la musique !";
+boutonLecturePause.classList.add("clignotant-alerte");
+} else {
+throw erreurLecture;
+}
+}
+mettreAJourSelection();
+} catch (erreur) {
+console.error("Impossible de lire le morceau :", erreur);
+}
+}
 /* =========================
-   SELECTION VISUELLE
-   ========================= */
-
+SELECTION VISUELLE
+========================= */
 function mettreAJourSelection() {
-
-    const lignes =
-        document.querySelectorAll(".morceau");
-
-    lignes.forEach((ligne, index) => {
-
-        ligne.classList.toggle(
-            "en-lecture",
-            index === morceauActuel
-        );
-    });
+const lignes =
+document.querySelectorAll(".morceau");
+lignes.forEach((ligne, index) => {
+ligne.classList.toggle(
+"en-lecture",
+index === morceauActuel
+);
+});
 }
-
-
 /* =========================
-   LECTURE / PAUSE
-   ========================= */
-
+LECTURE / PAUSE
+========================= */
 boutonLecturePause.addEventListener(
-    "click",
-    () => {
-
-        if (morceauActuel === -1) {
-
-            let premierDisponible =
-                album.morceaux.findIndex(
-                    morceau =>
-                        estDisponible(morceau)
-                );
-
-            if (premierDisponible !== -1) {
-                jouerMorceau(
-                    premierDisponible
-                );
-            }
-
-            return;
-        }
-
-        if (audio.paused) {
-            audio.play();
-        } else {
-            audio.pause();
-        }
-    }
+"click",
+() => {
+if (morceauActuel === -1) {
+let premierDisponible =
+album.morceaux.findIndex(
+morceau =>
+estDisponible(morceau)
 );
-
-
+if (premierDisponible !== -1) {
+jouerMorceau(
+premierDisponible
+);
+}
+return;
+}
+if (audio.paused) {
+audio.play();
+} else {
+audio.pause();
+}
+}
+);
 /* =========================
-   STOP
-   ========================= */
-
+STOP
+========================= */
 boutonStop.addEventListener(
-    "click",
-    () => {
-
-        audio.pause();
-
-        audio.currentTime = 0;
-
-        rotationEnCours = false;
-        angleDisque = 0;
-        derniereRotation = null;
-
-        pochette.style.transform =
-            "rotate(0deg)";
-
-        mettreAJourProgression();
-    }
+"click",
+() => {
+audio.pause();
+audio.currentTime = 0;
+rotationEnCours = false;
+angleDisque = 0;
+derniereRotation = null;
+pochette.style.transform =
+"rotate(0deg)";
+mettreAJourProgression();
+}
 );
-
-
 /* =========================
-   NAVIGATION / ORDRE ALEATOIRE
-   ========================= */
-
+NAVIGATION / ORDRE ALEATOIRE
+========================= */
 function indicesDisponibles() {
-    return album.morceaux
-        .map((morceau, index) => ({ morceau, index }))
-        .filter(element => estDisponible(element.morceau))
-        .map(element => element.index);
+return album.morceaux
+.map((morceau, index) => ({ morceau, index }))
+.filter(element => estDisponible(element.morceau))
+.map(element => element.index);
 }
-
 function melangerIndices(indices) {
-    const melanges = [...indices];
-    for (let i = melanges.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [melanges[i], melanges[j]] = [melanges[j], melanges[i]];
-    }
-    return melanges;
+const melanges = [...indices];
+for (let i = melanges.length - 1; i > 0; i--) {
+const j = Math.floor(Math.random() * (i + 1));
+[melanges[i], melanges[j]] = [melanges[j], melanges[i]];
 }
-
+return melanges;
+}
 function preparerOrdreAleatoire(indexDeDepart = morceauActuel, nouveauCycle = false) {
-    const disponibles = indicesDisponibles();
-    if (disponibles.length === 0) {
-        ordreAleatoire = [];
-        positionAleatoire = -1;
-        return;
-    }
-
-    if (nouveauCycle || !disponibles.includes(indexDeDepart)) {
-        ordreAleatoire = melangerIndices(disponibles);
-        // Évite si possible de commencer un nouveau cycle par le même titre
-        // que celui qui vient de terminer le précédent.
-        if (nouveauCycle && ordreAleatoire.length > 1 && ordreAleatoire[0] === indexDeDepart) {
-            const autrePosition = 1 + Math.floor(Math.random() * (ordreAleatoire.length - 1));
-            [ordreAleatoire[0], ordreAleatoire[autrePosition]] = [ordreAleatoire[autrePosition], ordreAleatoire[0]];
-        }
-        positionAleatoire = ordreAleatoire.indexOf(indexDeDepart);
-        return;
-    }
-
-    const reste = melangerIndices(disponibles.filter(index => index !== indexDeDepart));
-    ordreAleatoire = [indexDeDepart, ...reste];
-    positionAleatoire = 0;
+const disponibles = indicesDisponibles();
+if (disponibles.length === 0) {
+ordreAleatoire = [];
+positionAleatoire = -1;
+return;
 }
-
+if (nouveauCycle || !disponibles.includes(indexDeDepart)) {
+ordreAleatoire = melangerIndices(disponibles);
+// Évite si possible de commencer un nouveau cycle par le même titre
+// que celui qui vient de terminer le précédent.
+if (nouveauCycle && ordreAleatoire.length > 1 && ordreAleatoire[0] === indexDeDepart) {
+const autrePosition = 1 + Math.floor(Math.random() * (ordreAleatoire.length - 1));
+[ordreAleatoire[0], ordreAleatoire[autrePosition]] = [ordreAleatoire[autrePosition], ordreAleatoire[0]];
+}
+positionAleatoire = ordreAleatoire.indexOf(indexDeDepart);
+return;
+}
+const reste = melangerIndices(disponibles.filter(index => index !== indexDeDepart));
+ordreAleatoire = [indexDeDepart, ...reste];
+positionAleatoire = 0;
+}
 function synchroniserPositionAleatoire(index, reinitialiser = false) {
-    if (!modeAleatoire) return;
-
-    if (reinitialiser || !ordreAleatoire.includes(index)) {
-        preparerOrdreAleatoire(index);
-        return;
-    }
-
-    positionAleatoire = ordreAleatoire.indexOf(index);
+if (!modeAleatoire) return;
+if (reinitialiser || !ordreAleatoire.includes(index)) {
+preparerOrdreAleatoire(index);
+return;
 }
-
+positionAleatoire = ordreAleatoire.indexOf(index);
+}
 boutonPrecedent.addEventListener("click", () => {
-    if (morceauActuel === -1) return;
-
-    if (modeAleatoire) {
-        if (positionAleatoire > 0) {
-            jouerMorceau(ordreAleatoire[positionAleatoire - 1], true);
-        }
-        return;
-    }
-
-    let index = morceauActuel - 1;
-    while (index >= 0 && !estDisponible(album.morceaux[index])) index--;
-    if (index >= 0) jouerMorceau(index, true);
+if (morceauActuel === -1) return;
+if (modeAleatoire) {
+if (positionAleatoire > 0) {
+jouerMorceau(ordreAleatoire[positionAleatoire - 1], true);
+}
+return;
+}
+let index = morceauActuel - 1;
+while (index >= 0 && !estDisponible(album.morceaux[index])) index--;
+if (index >= 0) jouerMorceau(index, true);
 });
-
 boutonSuivant.addEventListener("click", () => jouerSuivant());
-
 function jouerSuivant() {
-    if (morceauActuel === -1) return;
-
-    if (modeAleatoire) {
-        if (positionAleatoire < ordreAleatoire.length - 1) {
-            jouerMorceau(ordreAleatoire[positionAleatoire + 1], true);
-        } else if (modeRepetition === "liste") {
-            preparerOrdreAleatoire(morceauActuel, true);
-            if (ordreAleatoire.length > 0) {
-                positionAleatoire = 0;
-                jouerMorceau(ordreAleatoire[0], true);
-            }
-        }
-        return;
-    }
-
-    let index = morceauActuel + 1;
-    while (index < album.morceaux.length && !estDisponible(album.morceaux[index])) index++;
-
-    if (index < album.morceaux.length) {
-        jouerMorceau(index, true);
-    } else if (modeRepetition === "liste") {
-        const premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
-        if (premierDisponible !== -1) jouerMorceau(premierDisponible, true);
-    }
+if (morceauActuel === -1) return;
+if (modeAleatoire) {
+if (positionAleatoire < ordreAleatoire.length - 1) {
+jouerMorceau(ordreAleatoire[positionAleatoire + 1], true);
+} else if (modeRepetition === "liste") {
+preparerOrdreAleatoire(morceauActuel, true);
+if (ordreAleatoire.length > 0) {
+positionAleatoire = 0;
+jouerMorceau(ordreAleatoire[0], true);
 }
-
+}
+return;
+}
+let index = morceauActuel + 1;
+while (index < album.morceaux.length && !estDisponible(album.morceaux[index])) index++;
+if (index < album.morceaux.length) {
+jouerMorceau(index, true);
+} else if (modeRepetition === "liste") {
+const premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
+if (premierDisponible !== -1) jouerMorceau(premierDisponible, true);
+}
+}
 /* =========================
-   ALEATOIRE
-   ========================= */
-
+ALEATOIRE
+========================= */
 boutonAleatoire.addEventListener("click", () => {
-    modeAleatoire = !modeAleatoire;
-
-    boutonAleatoire.classList.toggle("actif", modeAleatoire);
-    boutonAleatoire.innerHTML = modeAleatoire ? `
-        <svg viewBox="0 0 24 24" class="icone-commande">
-            <path d="M3 7h2c5 0 7 10 12 10h4"/>
-            <path d="M17 13l4 4-4 4"/>
-            <path d="M3 17h2c2 0 3.5-2 5-4"/>
-            <path d="M14 7c1-1 2-2 3-2h4"/>
-            <path d="M17 1l4 4-4 4"/>
-        </svg>
-    ` : `
-        <svg viewBox="0 0 24 24" class="icone-commande">
-            <path d="M3 7h18"/>
-            <path d="M17 3l4 4-4 4"/>
-            <path d="M3 17h18"/>
-            <path d="M17 13l4 4-4 4"/>
-        </svg>
-    `;
-
-    if (modeAleatoire) {
-        preparerOrdreAleatoire(morceauActuel);
-    } else {
-        ordreAleatoire = [];
-        positionAleatoire = -1;
-    }
-});
-
-function morceauAleatoire() {
-    // Conservée comme fonction de compatibilité avec les autres commandes.
-    const disponibles = indicesDisponibles().filter(index => index !== morceauActuel);
-    if (disponibles.length === 0) return -1;
-    return disponibles[Math.floor(Math.random() * disponibles.length)];
+modeAleatoire = !modeAleatoire;
+boutonAleatoire.classList.toggle("actif", modeAleatoire);
+boutonAleatoire.innerHTML = modeAleatoire ? <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M3 7h2c5 0 7 10 12 10h4"/> <path d="M17 13l4 4-4 4"/> <path d="M3 17h2c2 0 3.5-2 5-4"/> <path d="M14 7c1-1 2-2 3-2h4"/> <path d="M17 1l4 4-4 4"/> </svg> : <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M3 7h18"/> <path d="M17 3l4 4-4 4"/> <path d="M3 17h18"/> <path d="M17 13l4 4-4 4"/> </svg>;
+if (modeAleatoire) {
+preparerOrdreAleatoire(morceauActuel);
+} else {
+ordreAleatoire = [];
+positionAleatoire = -1;
 }
-
-
+});
+function morceauAleatoire() {
+// Conservée comme fonction de compatibilité avec les autres commandes.
+const disponibles = indicesDisponibles().filter(index => index !== morceauActuel);
+if (disponibles.length === 0) return -1;
+return disponibles[Math.floor(Math.random() * disponibles.length)];
+}
 /* =========================
-   REPETITION
-   ========================= */
-
+REPETITION
+========================= */
 boutonRepetition.addEventListener(
-    "click",
-    () => {
+"click",
+() => {
+if (
+modeRepetition === "aucun"
+) {
+modeRepetition = "titre";
+boutonRepetition.innerHTML = `
 
-        if (
-            modeRepetition === "aucun"
-        ) {
 
-            modeRepetition = "titre";
 
-            boutonRepetition.innerHTML = `
-    <svg viewBox="0 0 24 24" class="icone-commande">
-        <path d="M17 2l4 4-4 4"/>
-        <path d="M3 11V9a3 3 0 0 1 3-3h15"/>
-        <path d="M7 22l-4-4 4-4"/>
-        <path d="M21 13v2a3 3 0 0 1-3 3H3"/>
-        <text x="12" y="15" text-anchor="middle">1</text>
-    </svg>
+
 `;
-
-            boutonRepetition.classList.remove(
-                "repetition-liste"
-            );
-
-            boutonRepetition.classList.add(
-                "actif"
-            );
-
-            boutonRepetition.title =
-                "Répéter le titre";
-
-        } else if (
-            modeRepetition === "titre"
-        ) {
-
-            modeRepetition = "liste";
-
-            boutonRepetition.innerHTML = `
-    <svg viewBox="0 0 24 24" class="icone-commande">
-        <path d="M17 2l4 4-4 4"/>
-        <path d="M3 11V9a3 3 0 0 1 3-3h15"/>
-        <path d="M7 22l-4-4 4-4"/>
-        <path d="M21 13v2a3 3 0 0 1-3 3H3"/>
-    </svg>
-`;
-
-            boutonRepetition.classList.remove(
-                "actif"
-            );
-
-            boutonRepetition.classList.add(
-                "repetition-liste"
-            );
-
-            boutonRepetition.title =
-                "Répéter l'album";
-
-        } else {
-
-            modeRepetition = "aucun";
-
-            boutonRepetition.innerHTML = `
-`;
+boutonRepetition.classList.remove(
+"repetition-liste"
+);
+boutonRepetition.classList.add(
+"actif"
+);
+boutonRepetition.title =
+"Répéter le titre";
+} else if (
+modeRepetition === "titre"
+) {
+modeRepetition = "liste";
+boutonRepetition.innerHTML = <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M17 2l4 4-4 4"/> <path d="M3 11V9a3 3 0 0 1 3-3h15"/> <path d="M7 22l-4-4 4-4"/> <path d="M21 13v2a3 3 0 0 1-3 3H3"/> </svg>;
+boutonRepetition.classList.remove(
+"actif"
+);
+boutonRepetition.classList.add(
+"repetition-liste"
+);
+boutonRepetition.title =
+"Répéter l'album";
+} else {
+modeRepetition = "aucun";
+boutonRepetition.innerHTML = <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M17 2l4 4-4 4"/> <path d="M3 11V9a3 3 0 0 1 3-3h15"/> <path d="M7 22l-4-4 4-4"/> <path d="M21 13v2a3 3 0 0 1-3 3H3"/> <path d="M5 5l14 14" stroke-width="3"/> </svg>;
 boutonRepetition.classList.remove(
 "actif"
 );
