@@ -919,18 +919,18 @@ boutonRepetition.title =
 FIN DU MORCEAU
 ========================= */
 audio.addEventListener(
-"ended",
-() => {
-if (idAlbum) {
-localStorage.removeItem(dernierePosition_${idAlbum});
-}
-if (modeRepetition === "titre") {
-audio.currentTime = 0;
-audio.play();
-return;
-}
-jouerSuivant();
-}
+    "ended",
+    () => {
+        if (idAlbum) {
+            localStorage.removeItem("dernierePosition_" + idAlbum);
+        }
+        if (modeRepetition === "titre") {
+            audio.currentTime = 0;
+            audio.play();
+            return;
+        }
+        jouerSuivant();
+    }
 );
 /* =========================
 PROGRESSION
@@ -1412,73 +1412,91 @@ telechargerAlbum
 INITIALISATION
 ========================= */
 async function initialiserLecteur() {
-await afficherMorceaux();
-chargerDureesDesMorceaux();
-const indexMorceau = parametres.get("morceau");
-if (indexMorceau !== null) {
-// 1. Priorité absolue : un morceau spécifique a été demandé via un lien partagé
-const index = Number(indexMorceau);
-if (
-Number.isInteger(index) &&
-index >= 0 &&
-index < album.morceaux.length &&
-estDisponible(album.morceaux[index])
-) {
-jouerMorceau(index);
+
+    await afficherMorceaux();
+
+    chargerDureesDesMorceaux();
+
+    const indexMorceau = parametres.get("morceau");
+
+    if (indexMorceau !== null) {
+        // 1. Priorité absolue : un morceau spécifique a été demandé via un lien partagé
+        const index = Number(indexMorceau);
+
+        if (
+            Number.isInteger(index) &&
+            index >= 0 &&
+            index < album.morceaux.length &&
+            estDisponible(album.morceaux[index])
+        ) {
+            jouerMorceau(index);
+        }
+    } else {
+        // 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
+        // On utilise des guillemets normaux et des signes + pour éviter tout bug de syntaxe
+        const sauvegardeMorceau = localStorage.getItem("dernierMorceau_" + idAlbum);
+        const sauvegardePosition = localStorage.getItem("dernierePosition_" + idAlbum);
+
+        if (sauvegardeMorceau !== null) {
+            const indexSauvegarde = Number(sauvegardeMorceau);
+            const positionSauvegarde = sauvegardePosition ? Number(sauvegardePosition) : 0;
+
+            if (indexSauvegarde >= 0 && indexSauvegarde < album.morceaux.length && estDisponible(album.morceaux[indexSauvegarde])) {
+                // On recharge le morceau et la position exacte
+                chargerPremierMorceau(indexSauvegarde, positionSauvegarde);
+                return;
+            }
+        }
+
+        // 3. Secours : si aucun historique, on charge le tout premier morceau disponible de l'album
+        let premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
+        if (premierDisponible !== -1) {
+            chargerPremierMorceau(premierDisponible, 0);
+        }
+    }
 }
-} else {
-// 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
-const sauvegardeMorceau = localStorage.getItem(dernierMorceau_${idAlbum});
-const sauvegardePosition = localStorage.getItem(dernierePosition_${idAlbum});
-if (sauvegardeMorceau !== null) {
-const indexSauvegarde = Number(sauvegardeMorceau);
-const positionSauvegarde = sauvegardePosition ? Number(sauvegardePosition) : 0;
-if (indexSauvegarde >= 0 && indexSauvegarde < album.morceaux.length && estDisponible(album.morceaux[indexSauvegarde])) {
-// On recharge le morceau et la position exacte où il s'était arrêté
-chargerPremierMorceau(indexSauvegarde, positionSauvegarde);
-return;
-}
-}
-// 3. Secours : si aucun historique, on charge le tout premier morceau disponible de l'album
-let premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
-if (premierDisponible !== -1) {
-chargerPremierMorceau(premierDisponible, 0);
-}
-}
-}
+
 // Fonction pour préparer un morceau en arrière-plan (sans forcer la lecture audio) au démarrage
 async function chargerPremierMorceau(index, positionInitiale = 0) {
-const morceau = album.morceaux[index];
-if (!estDisponible(morceau)) return;
-morceauActuel = index;
-synchroniserPositionAleatoire(index, true);
-morceauActuelElement.textContent = morceau.titre;
-boutonParolesActuelles.dataset.index = index;
-try {
-const cache = await caches.open(CACHE_AUDIO_NAME);
-const fichierEnCache = await cache.match(morceau.fichier);
-const horsLigne = !navigator.onLine;
-if (horsLigne && !fichierEnCache) return;
-if (fichierEnCache) {
-if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
-const blob = await fichierEnCache.blob();
-audio._urlLocale = URL.createObjectURL(blob);
-audio.src = audio._urlLocale;
-} else {
-audio.src = morceau.fichier;
+    const morceau = album.morceaux[index];
+    if (!estDisponible(morceau)) return;
+
+    morceauActuel = index;
+    synchroniserPositionAleatoire(index, true);
+    morceauActuelElement.textContent = morceau.titre;
+    boutonParolesActuelles.dataset.index = index;
+
+    try {
+        const cache = await caches.open(CACHE_AUDIO_NAME);
+        const fichierEnCache = await cache.match(morceau.fichier);
+        const horsLigne = !navigator.onLine;
+
+        if (horsLigne && !fichierEnCache) return;
+
+        if (fichierEnCache) {
+            if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
+            const blob = await fichierEnCache.blob();
+            audio._urlLocale = URL.createObjectURL(blob);
+            audio.src = audio._urlLocale;
+        } else {
+            audio.src = morceau.fichier;
+        }
+        
+        audio.load();
+        
+        // On applique la position sauvegardée dès que les métadonnées de la chanson sont prêtes
+        if (positionInitiale > 0) {
+            audio.addEventListener('loadedmetadata', function positionner() {
+                audio.currentTime = positionInitiale;
+                mettreAJourProgression();
+                audio.removeEventListener('loadedmetadata', positionner);
+            });
+        }
+
+        mettreAJourSelection();
+    } catch (erreur) {
+        console.error("Impossible de préparer le morceau au démarrage :", erreur);
+    }
 }
-audio.load();
-// On applique la position sauvegardée dès que les métadonnées de la chanson sont prêtes
-if (positionInitiale > 0) {
-audio.addEventListener('loadedmetadata', function positionner() {
-audio.currentTime = positionInitiale;
-mettreAJourProgression();
-audio.removeEventListener('loadedmetadata', positionner);
-});
-}
-mettreAJourSelection();
-} catch (erreur) {
-console.error("Impossible de préparer le morceau au démarrage :", erreur);
-}
-}
+
 initialiserLecteur();
