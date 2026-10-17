@@ -24,8 +24,7 @@ self.addEventListener("install", event => {
     event.waitUntil((async () => {
         const cache = await caches.open(CACHE_NAME);
         await cache.addAll(FICHIERS_A_METTRE_EN_CACHE);
-        // Force le nouveau Service Worker à écraser l'ancien immédiatement
-        await self.skipWaiting(); 
+        await self.skipWaiting();
     })());
 });
 
