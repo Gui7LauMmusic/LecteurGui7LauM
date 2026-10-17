@@ -1,4 +1,5 @@
-const CACHE_NAME = "gui7laum-v7";
+const CACHE_NAME = "gui7laum-v8";
+// Ne pas changer ce nom : il contient les téléchargements hors ligne de l'utilisateur.
 const CACHE_AUDIO_NAME = "gui7laum-audio-v1";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
@@ -9,130 +10,69 @@ const FICHIERS_A_METTRE_EN_CACHE = [
     "./manifest.json",
     "./css/style.css",
     "./js/artistes.js",
-    "./js/lecteur.js"
-    "./js/likes.js"
+    "./js/lecteur.js",
+    "./js/likes.js",
+    "./images/artistes/gui7laum/Profil.png",
+    "./images/artistes/gui7laum-ia/Profil.png",
+    "./images/pochettes/gui7laum-ia/Elle e(s)t moi.png",
+    "./images/pochettes/gui7laum-ia/Elle e(s)t moi (version acoustique).png",
+    "./images/icones/icon-192.png",
+    "./images/icones/icon-512.png"
 ];
 
-
-// =========================
-// INSTALLATION
-// =========================
-
 self.addEventListener("install", event => {
-
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
-            return cache.addAll(FICHIERS_A_METTRE_EN_CACHE);
-        })
-    );
-
-    self.skipWaiting();
+    event.waitUntil((async () => {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.addAll(FICHIERS_A_METTRE_EN_CACHE);
+        // Force le nouveau Service Worker à écraser l'ancien immédiatement
+        await self.skipWaiting(); 
+    })());
 });
-
-
-// =========================
-// ACTIVATION
-// =========================
 
 self.addEventListener("activate", event => {
-
-    event.waitUntil(
-        Promise.all([
-            self.clients.claim(),
-
-            caches.keys().then(noms => {
-                return Promise.all(
-                    noms
-                        .filter(nom =>
-                            nom !== CACHE_NAME &&
-                            nom !== CACHE_AUDIO_NAME
-                        )
-                        .map(nom => caches.delete(nom))
-                );
-            })
-        ])
-    );
+    event.waitUntil((async () => {
+        const noms = await caches.keys();
+        await Promise.all(noms
+            .filter(nom => nom !== CACHE_NAME && nom !== CACHE_AUDIO_NAME)
+            .map(nom => caches.delete(nom)));
+        await self.clients.claim();
+    })());
 });
-
-
-// =========================
-// REQUÊTES
-// =========================
 
 self.addEventListener("fetch", event => {
-
     const requete = event.request;
-
-    if (requete.method !== "GET") {
-        return;
-    }
+    if (requete.method !== "GET") return;
 
     const url = new URL(requete.url);
+    if (url.origin !== self.location.origin) return;
 
-    if (url.origin !== self.location.origin) {
+    // Le cache audio est indépendant des versions du site et n'est jamais
+    // supprimé pendant une mise à jour.
+    if (url.pathname.toLowerCase().endsWith(".mp3")) {
+        event.respondWith((async () => {
+            const cache = await caches.open(CACHE_AUDIO_NAME);
+            const audioEnCache = await cache.match(requete, { ignoreSearch: true });
+            if (audioEnCache) return audioEnCache;
+            return fetch(requete);
+        })());
         return;
     }
 
-    const estAudio = url.pathname.endsWith(".mp3");
-
-    // Les MP3 téléchargés restent prioritaires.
-    if (estAudio) {
-
-        event.respondWith(
-            caches.open(CACHE_AUDIO_NAME).then(async cache => {
-
-                const audioEnCache = await cache.match(requete);
-
-                if (audioEnCache) {
-                    return audioEnCache;
-                }
-
-                return fetch(requete);
-            })
-        );
-
-        return;
-    }
-
-    // Pour les fichiers du site :
-    // réseau en priorité, cache en secours.
-    event.respondWith(
-        (async () => {
-
-            try {
-
-                const requeteFraiche = new Request(requete, {
-    cache: "no-cache"
-});
-const reponse = await fetch(requeteFraiche);
-
-                if (reponse.ok) {
-
-                    const cache = await caches.open(CACHE_NAME);
-
-                    await cache.put(
-                        requete,
-                        reponse.clone()
-                    );
-                }
-
-                return reponse;
-
-            } catch (erreur) {
-
-                const reponseEnCache = await caches.match(
-                    requete,
-                    { ignoreSearch: true }
-                );
-
-                if (reponseEnCache) {
-                    return reponseEnCache;
-                }
-
-                throw erreur;
+    // Réseau d'abord pour récupérer les fichiers récents, cache en secours
+    // pour que les pages déjà visitées restent accessibles hors connexion.
+    event.respondWith((async () => {
+        try {
+            const requeteFraiche = new Request(requete, { cache: "no-cache" });
+            const reponse = await fetch(requeteFraiche);
+            if (reponse.ok) {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(requete, reponse.clone());
             }
-
-        })()
-    );
-
+            return reponse;
+        } catch (erreur) {
+            const reponseEnCache = await caches.match(requete, { ignoreSearch: true });
+            if (reponseEnCache) return reponseEnCache;
+            throw erreur;
+        }
+    })());
 });

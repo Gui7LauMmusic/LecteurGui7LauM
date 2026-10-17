@@ -1,4 +1,5 @@
 let likesInitialises = false;
+let promesseInitialisationLikes = null;
 
 const parametres = new URLSearchParams(window.location.search);
 
@@ -79,6 +80,8 @@ const boutonMuet = document.getElementById("muet");
 let morceauActuel = -1;
 
 let modeAleatoire = false;
+let ordreAleatoire = [];
+let positionAleatoire = -1;
 
 let modeRepetition = "aucun";
 
@@ -534,10 +537,10 @@ async function telechargerAlbum() {
    ========================= */
 
 async function afficherMorceaux() {
-if (typeof likesInitialises === "undefined" || !likesInitialises) {
-        await initialiserLikes();
-        likesInitialises = true;
-    }
+    // Afficher le lecteur sans attendre Supabase : un réseau lent ou
+    // indisponible ne doit pas empêcher l'ouverture d'un lien partagé.
+    const lancerInitialisationLikes = !likesInitialises;
+    likesInitialises = true;
 
     listeMorceaux.innerHTML = "";
 
@@ -567,6 +570,7 @@ const idLike =
 
             const boutonLike = document.createElement("button");
             boutonLike.className = "bouton-like";
+            boutonLike.dataset.likeId = idLike;
             boutonLike.type = "button";
 
             const etatLike = obtenirLike(idLike);
@@ -585,6 +589,10 @@ const idLike =
                 event.stopPropagation();
 
                 boutonLike.disabled = true;
+
+                if (promesseInitialisationLikes) {
+                    await promesseInitialisationLikes;
+                }
 
                 const nouvelEtat = await changerLike(idLike);
 
@@ -671,11 +679,28 @@ const idLike =
         listeMorceaux.appendChild(ligne);
     });
 
-    await mettreAJourPastillesTelechargement();
-
-    await mettreAJourBoutonAlbum();
+    // Les informations de téléchargement sont secondaires : elles ne
+    // doivent pas retarder la sélection d'un morceau via son URL.
+    mettreAJourPastillesTelechargement().catch(erreur =>
+        console.warn("État des téléchargements indisponible :", erreur)
+    );
+    mettreAJourBoutonAlbum().catch(erreur =>
+        console.warn("État du téléchargement de l'album indisponible :", erreur)
+    );
 
     mettreAJourSelection();
+
+    if (lancerInitialisationLikes) {
+        promesseInitialisationLikes = initialiserLikes().then(() => {
+            document.querySelectorAll(".bouton-like").forEach(bouton => {
+                const etat = obtenirLike(bouton.dataset.likeId);
+                bouton.textContent = `${etat.actif ? "♥" : "♡"} ${etat.compte}`;
+                bouton.classList.toggle("like-actif", etat.actif);
+            });
+        }).catch(erreur => {
+            console.warn("Likes indisponibles :", erreur);
+        });
+    }
 }
 
 
@@ -683,7 +708,7 @@ const idLike =
    LECTURE D'UN MORCEAU
    ========================= */
 
-async function jouerMorceau(index) {
+async function jouerMorceau(index, conserverOrdreAleatoire = false) {
 
     const morceau = album.morceaux[index];
 
@@ -699,6 +724,7 @@ async function jouerMorceau(index) {
         "rotate(0deg)";
 
     morceauActuel = index;
+    synchroniserPositionAleatoire(index, !conserverOrdreAleatoire);
 
     morceauActuelElement.textContent =
         morceau.titre;
@@ -758,16 +784,25 @@ async function jouerMorceau(index) {
 
         audio.load();
 
-        await audio.play();
+        try {
+            try {
+            await audio.play();
+            boutonLecturePause.title = "Pause";
+            boutonLecturePause.classList.remove("clignotant-alerte");
+        } catch (erreurLecture) {
+            if (erreurLecture.name === "NotAllowedError") {
+                // Le navigateur a bloqué le son : on fait clignoter le bouton Play pour guider l'utilisateur
+                boutonLecturePause.title = "Clique ici pour lancer la musique !";
+                boutonLecturePause.classList.add("clignotant-alerte");
+            } else {
+                throw erreurLecture;
+            }
+        }
 
         mettreAJourSelection();
 
     } catch (erreur) {
-
-        console.error(
-            "Impossible de lire le morceau :",
-            erreur
-        );
+        console.error("Impossible de lire le morceau :", erreur);
     }
 }
 
@@ -849,124 +884,114 @@ boutonStop.addEventListener(
 
 
 /* =========================
-   PRECEDENT
+   NAVIGATION / ORDRE ALEATOIRE
    ========================= */
 
-boutonPrecedent.addEventListener(
-    "click",
-    () => {
+function indicesDisponibles() {
+    return album.morceaux
+        .map((morceau, index) => ({ morceau, index }))
+        .filter(element => estDisponible(element.morceau))
+        .map(element => element.index);
+}
 
-        if (morceauActuel === -1) {
-            return;
-        }
-
-        let index =
-            morceauActuel - 1;
-
-        if (modeAleatoire) {
-            index = morceauAleatoire();
-        }
-
-        while (
-            index >= 0 &&
-            !estDisponible(
-                album.morceaux[index]
-            )
-        ) {
-            index--;
-        }
-
-        if (index >= 0) {
-            jouerMorceau(index);
-        }
+function melangerIndices(indices) {
+    const melanges = [...indices];
+    for (let i = melanges.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [melanges[i], melanges[j]] = [melanges[j], melanges[i]];
     }
-);
+    return melanges;
+}
 
-
-/* =========================
-   SUIVANT
-   ========================= */
-
-boutonSuivant.addEventListener(
-    "click",
-    () => {
-        jouerSuivant();
-    }
-);
-
-
-function jouerSuivant() {
-
-    if (morceauActuel === -1) {
+function preparerOrdreAleatoire(indexDeDepart = morceauActuel, nouveauCycle = false) {
+    const disponibles = indicesDisponibles();
+    if (disponibles.length === 0) {
+        ordreAleatoire = [];
+        positionAleatoire = -1;
         return;
     }
 
-    let index;
-
-    if (modeAleatoire) {
-
-        index = morceauAleatoire();
-
-    } else {
-
-        index =
-            morceauActuel + 1;
-
-        while (
-            index <
-                album.morceaux.length &&
-            !estDisponible(
-                album.morceaux[index]
-            )
-        ) {
-            index++;
+    if (nouveauCycle || !disponibles.includes(indexDeDepart)) {
+        ordreAleatoire = melangerIndices(disponibles);
+        // Évite si possible de commencer un nouveau cycle par le même titre
+        // que celui qui vient de terminer le précédent.
+        if (nouveauCycle && ordreAleatoire.length > 1 && ordreAleatoire[0] === indexDeDepart) {
+            const autrePosition = 1 + Math.floor(Math.random() * (ordreAleatoire.length - 1));
+            [ordreAleatoire[0], ordreAleatoire[autrePosition]] = [ordreAleatoire[autrePosition], ordreAleatoire[0]];
         }
+        positionAleatoire = ordreAleatoire.indexOf(indexDeDepart);
+        return;
     }
 
-    if (
-        index <
-        album.morceaux.length
-    ) {
-
-        jouerMorceau(index);
-
-    } else if (
-        modeRepetition === "liste"
-    ) {
-
-        const premierDisponible =
-            album.morceaux.findIndex(
-                morceau =>
-                    estDisponible(morceau)
-            );
-
-        if (premierDisponible !== -1) {
-            jouerMorceau(
-                premierDisponible
-            );
-        }
-    }
+    const reste = melangerIndices(disponibles.filter(index => index !== indexDeDepart));
+    ordreAleatoire = [indexDeDepart, ...reste];
+    positionAleatoire = 0;
 }
 
+function synchroniserPositionAleatoire(index, reinitialiser = false) {
+    if (!modeAleatoire) return;
+
+    if (reinitialiser || !ordreAleatoire.includes(index)) {
+        preparerOrdreAleatoire(index);
+        return;
+    }
+
+    positionAleatoire = ordreAleatoire.indexOf(index);
+}
+
+boutonPrecedent.addEventListener("click", () => {
+    if (morceauActuel === -1) return;
+
+    if (modeAleatoire) {
+        if (positionAleatoire > 0) {
+            jouerMorceau(ordreAleatoire[positionAleatoire - 1], true);
+        }
+        return;
+    }
+
+    let index = morceauActuel - 1;
+    while (index >= 0 && !estDisponible(album.morceaux[index])) index--;
+    if (index >= 0) jouerMorceau(index, true);
+});
+
+boutonSuivant.addEventListener("click", () => jouerSuivant());
+
+function jouerSuivant() {
+    if (morceauActuel === -1) return;
+
+    if (modeAleatoire) {
+        if (positionAleatoire < ordreAleatoire.length - 1) {
+            jouerMorceau(ordreAleatoire[positionAleatoire + 1], true);
+        } else if (modeRepetition === "liste") {
+            preparerOrdreAleatoire(morceauActuel, true);
+            if (ordreAleatoire.length > 0) {
+                positionAleatoire = 0;
+                jouerMorceau(ordreAleatoire[0], true);
+            }
+        }
+        return;
+    }
+
+    let index = morceauActuel + 1;
+    while (index < album.morceaux.length && !estDisponible(album.morceaux[index])) index++;
+
+    if (index < album.morceaux.length) {
+        jouerMorceau(index, true);
+    } else if (modeRepetition === "liste") {
+        const premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
+        if (premierDisponible !== -1) jouerMorceau(premierDisponible, true);
+    }
+}
 
 /* =========================
    ALEATOIRE
    ========================= */
 
-boutonAleatoire.addEventListener(
-    "click",
-    () => {
+boutonAleatoire.addEventListener("click", () => {
+    modeAleatoire = !modeAleatoire;
 
-        modeAleatoire =
-            !modeAleatoire;
-
-        boutonAleatoire.classList.toggle(
-            "actif",
-            modeAleatoire
-        );
-
-        boutonAleatoire.innerHTML = modeAleatoire
-    ? `
+    boutonAleatoire.classList.toggle("actif", modeAleatoire);
+    boutonAleatoire.innerHTML = modeAleatoire ? `
         <svg viewBox="0 0 24 24" class="icone-commande">
             <path d="M3 7h2c5 0 7 10 12 10h4"/>
             <path d="M17 13l4 4-4 4"/>
@@ -974,8 +999,7 @@ boutonAleatoire.addEventListener(
             <path d="M14 7c1-1 2-2 3-2h4"/>
             <path d="M17 1l4 4-4 4"/>
         </svg>
-    `
-    : `
+    ` : `
         <svg viewBox="0 0 24 24" class="icone-commande">
             <path d="M3 7h18"/>
             <path d="M17 3l4 4-4 4"/>
@@ -983,56 +1007,20 @@ boutonAleatoire.addEventListener(
             <path d="M17 13l4 4-4 4"/>
         </svg>
     `;
-    }
-);
 
+    if (modeAleatoire) {
+        preparerOrdreAleatoire(morceauActuel);
+    } else {
+        ordreAleatoire = [];
+        positionAleatoire = -1;
+    }
+});
 
 function morceauAleatoire() {
-
-    const morceauxDisponibles =
-        album.morceaux
-            .map(
-                (morceau, index) => ({
-                    morceau,
-                    index
-                })
-            )
-            .filter(
-                element =>
-                    estDisponible(
-                        element.morceau
-                    )
-            );
-
-    if (
-        morceauxDisponibles.length === 0
-    ) {
-        return -1;
-    }
-
-    if (
-        morceauxDisponibles.length === 1
-    ) {
-        return morceauxDisponibles[0].index;
-    }
-
-    let choix;
-
-    do {
-
-        choix =
-            morceauxDisponibles[
-                Math.floor(
-                    Math.random() *
-                    morceauxDisponibles.length
-                )
-            ].index;
-
-    } while (
-        choix === morceauActuel
-    );
-
-    return choix;
+    // Conservée comme fonction de compatibilité avec les autres commandes.
+    const disponibles = indicesDisponibles().filter(index => index !== morceauActuel);
+    if (disponibles.length === 0) return -1;
+    return disponibles[Math.floor(Math.random() * disponibles.length)];
 }
 
 
@@ -1133,17 +1121,14 @@ boutonRepetition.addEventListener(
 audio.addEventListener(
     "ended",
     () => {
-
-        if (
-            modeRepetition === "titre"
-        ) {
-
+        if (idAlbum) {
+            localStorage.removeItem(`dernierePosition_${idAlbum}`);
+        }
+        if (modeRepetition === "titre") {
             audio.currentTime = 0;
             audio.play();
-
             return;
         }
-
         jouerSuivant();
     }
 );
@@ -1157,6 +1142,11 @@ audio.addEventListener(
     "timeupdate",
     () => {
         mettreAJourProgression();
+        // Sauvegarde le morceau actuel et la position en secondes (uniquement si l'album correspond)
+        if (morceauActuel !== -1 && idAlbum) {
+            localStorage.setItem(`dernierMorceau_${idAlbum}`, morceauActuel);
+            localStorage.setItem(`dernierePosition_${idAlbum}`, audio.currentTime);
+        }
     }
 );
 
@@ -1630,8 +1620,10 @@ if (boutonPartager) {
         "click",
         async () => {
 
-            const urlPartage = new URL(
-                window.location.href
+            const urlPartage = new URL(window.location.href);
+            urlPartage.hash = "";
+            ["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
+                urlPartage.searchParams.delete(parametre)
             );
 
             let titre = album.titre;
@@ -1728,10 +1720,11 @@ if (boutonPartagerAlbum) {
 
             event.preventDefault();
 
-            const urlPartage = new URL(
-                window.location.href
+            const urlPartage = new URL(window.location.href);
+            urlPartage.hash = "";
+            ["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
+                urlPartage.searchParams.delete(parametre)
             );
-
             urlPartage.searchParams.delete("morceau");
 
             const url = urlPartage.href;
@@ -1809,7 +1802,7 @@ async function initialiserLecteur() {
     const indexMorceau = parametres.get("morceau");
 
     if (indexMorceau !== null) {
-
+        // 1. Priorité absolue : un morceau spécifique a été demandé via un lien partagé
         const index = Number(indexMorceau);
 
         if (
@@ -1820,6 +1813,70 @@ async function initialiserLecteur() {
         ) {
             jouerMorceau(index);
         }
+    } else {
+        // 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
+        const sauvegardeMorceau = localStorage.getItem(`dernierMorceau_${idAlbum}`);
+        const sauvegardePosition = localStorage.getItem(`dernierePosition_${idAlbum}`);
+
+        if (sauvegardeMorceau !== null) {
+            const indexSauvegarde = Number(sauvegardeMorceau);
+            const positionSauvegarde = sauvegardePosition ? Number(sauvegardePosition) : 0;
+
+            if (indexSauvegarde >= 0 && indexSauvegarde < album.morceaux.length && estDisponible(album.morceaux[indexSauvegarde])) {
+                // On recharge le morceau et la position exacte où il s'était arrêté
+                chargerPremierMorceau(indexSauvegarde, positionSauvegarde);
+                return;
+            }
+        }
+
+        // 3. Secours : si aucun historique, on charge le tout premier morceau disponible de l'album
+        let premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
+        if (premierDisponible !== -1) {
+            chargerPremierMorceau(premierDisponible, 0);
+        }
+    }
+}
+
+// Fonction pour préparer un morceau en arrière-plan (sans forcer la lecture audio) au démarrage
+async function chargerPremierMorceau(index, positionInitiale = 0) {
+    const morceau = album.morceaux[index];
+    if (!estDisponible(morceau)) return;
+
+    morceauActuel = index;
+    synchroniserPositionAleatoire(index, true);
+    morceauActuelElement.textContent = morceau.titre;
+    boutonParolesActuelles.dataset.index = index;
+
+    try {
+        const cache = await caches.open(CACHE_AUDIO_NAME);
+        const fichierEnCache = await cache.match(morceau.fichier);
+        const horsLigne = !navigator.onLine;
+
+        if (horsLigne && !fichierEnCache) return;
+
+        if (fichierEnCache) {
+            if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
+            const blob = await fichierEnCache.blob();
+            audio._urlLocale = URL.createObjectURL(blob);
+            audio.src = audio._urlLocale;
+        } else {
+            audio.src = morceau.fichier;
+        }
+        
+        audio.load();
+        
+        // On applique la position sauvegardée dès que les métadonnées de la chanson sont prêtes
+        if (positionInitiale > 0) {
+            audio.addEventListener('loadedmetadata', function positionner() {
+                audio.currentTime = positionInitiale;
+                mettreAJourProgression();
+                audio.removeEventListener('loadedmetadata', positionner);
+            });
+        }
+
+        mettreAJourSelection();
+    } catch (erreur) {
+        console.error("Impossible de préparer le morceau au démarrage :", erreur);
     }
 }
 

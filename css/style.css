@@ -794,3 +794,15 @@ filter: brightness(1.15);
     width: 32px;
     height: 32px;
 }
+
+/* Animation pour guider l'utilisateur si Facebook bloque la lecture automatique */
+.clignotant-alerte {
+    animation: alertePlay 1.5s infinite ease-in-out;
+    border: 2px solid white !important;
+}
+
+@keyframes alertePlay {
+    0% { transform: scale(1); background: #F57C00; box-shadow: 0 0 0 0 rgba(245, 124, 0, 0.7); }
+    50% { transform: scale(1.1); background: #E53935; box-shadow: 0 0 0 15px rgba(229, 57, 53, 0); }
+    100% { transform: scale(1); background: #F57C00; box-shadow: 0 0 0 0 rgba(245, 124, 0, 0); }
+}
