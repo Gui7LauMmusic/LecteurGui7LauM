@@ -307,7 +307,7 @@ async function telechargerMorceau(morceau, bouton) {
         return;
     }
 
-    button.disabled = true;
+    bouton.disabled = true;
     bouton.textContent = "⏳";
 
     try {
@@ -467,7 +467,7 @@ async function telechargerAlbum() {
             console.error(erreur);
 
             alert(
-
+Utilisez le code avec précaution.
 "Impossible de supprimer le téléchargement de l'album."
 );
 }
@@ -775,14 +775,16 @@ return;
 if (nouveauCycle || !disponibles.includes(indexDeDepart)) {
 ordreAleatoire = melangerIndices(disponibles);
 if (nouveauCycle && ordreAleatoire.length > 1 && ordreAleatoire[0] === indexDeDepart) {
-const autrePosition = 1 + Math.floor(Math.random() * (ordreAleatoire.length - 1));
-[ordreAleatoire[0], ordreAleatoire[autrePosition]] = [ordreAleatoire[autrePosition], ordreAleatoire[0]];
+const circlePosition = 1 + Math.floor(Math.random() * (ordreAleatoire.length - 1));
+const temp = ordreAleatoire[0];
+ordreAleatoire[0] = ordreAleatoire[circlePosition];
+ordreAleatoire[circlePosition] = temp;
 }
 positionAleatoire = ordreAleatoire.indexOf(indexDeDepart);
 return;
 }
 const reste = melangerIndices(disponibles.filter(index => index !== indexDeDepart));
-ordreAleatoire = [indexDeDepart, ...reste];
+ordreAleatoire = [indexDeDepart].concat(reste);
 positionAleatoire = 0;
 }
 function synchroniserPositionAleatoire(index, reinitialiser = false) {
@@ -835,7 +837,7 @@ ALEATOIRE
 boutonAleatoire.addEventListener("click", () => {
 modeAleatoire = !modeAleatoire;
 boutonAleatoire.classList.toggle("actif", modeAleatoire);
-boutonAleatoire.innerHTML = modeAleatoire ? <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M3 7h2c5 0 7 10 12 10h4"/> <path d="M17 13l4 4-4 4"/> <path d="M3 17h2c2 0 3.5-2 5-4"/> <path d="M14 7c1-1 2-2 3-2h4"/> <path d="M17 1l4 4-4 4"/> </svg> : <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M3 7h18"/> <path d="M17 3l4 4-4 4"/> <path d="M3 17h18"/> <path d="M17 13l4 4-4 4"/> </svg>;
+boutonAleatoire.innerHTML = modeAleatoire ? '      ' : '     ';
 if (modeAleatoire) {
 preparerOrdreAleatoire(morceauActuel);
 } else {
@@ -858,7 +860,7 @@ if (
 modeRepetition === "aucun"
 ) {
 modeRepetition = "titre";
-boutonRepetition.innerHTML = <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M17 2l4 4-4 4"/> <path d="M3 11V9a3 3 0 0 1 3-3h15"/> <path d="M7 22l-4-4 4-4"/> <path d="M21 13v2a3 3 0 0 1-3 3H3"/> <text x="12" y="15" text-anchor="middle">1</text> </svg>;
+boutonRepetition.innerHTML = '     1 ';
 boutonRepetition.classList.remove(
 "repetition-liste"
 );
@@ -871,7 +873,7 @@ boutonRepetition.title =
 modeRepetition === "titre"
 ) {
 modeRepetition = "liste";
-boutonRepetition.innerHTML = <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M17 2l4 4-4 4"/> <path d="M3 11V9a3 3 0 0 1 3-3h15"/> <path d="M7 22l-4-4 4-4"/> <path d="M21 13v2a3 3 0 0 1-3 3H3"/> </svg>;
+boutonRepetition.innerHTML = '     ';
 boutonRepetition.classList.remove(
 "actif"
 );
@@ -882,7 +884,7 @@ boutonRepetition.title =
 "Répéter l'album";
 } else {
 modeRepetition = "aucun";
-boutonRepetition.innerHTML = <svg viewBox="0 0 24 24" class="icone-commande"> <path d="M17 2l4 4-4 4"/> <path d="M3 11V9a3 3 0 0 1 3-3h15"/> <path d="M7 22l-4-4 4-4"/> <path d="M21 13v2a3 3 0 0 1-3 3H3"/> <path d="M5 5l14 14" stroke-width="3"/> </svg>;
+boutonRepetition.innerHTML = '      ';
 boutonRepetition.classList.remove(
 "actif"
 );
@@ -1406,7 +1408,6 @@ jouerMorceau(index);
 }
 } else {
 // 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
-// On utilise des guillemets normaux et des signes + pour éviter tout bug de syntaxe
 const sauvegardeMorceau = localStorage.getItem("dernierMorceau_" + idAlbum);
 const sauvegardePosition = localStorage.getItem("dernierePosition_" + idAlbum);
 if (sauvegardeMorceau !== null) {
