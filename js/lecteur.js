@@ -307,7 +307,7 @@ async function telechargerMorceau(morceau, bouton) {
         return;
     }
 
-    bouton.disabled = true;
+    button.disabled = true;
     bouton.textContent = "⏳";
 
     try {
@@ -1406,6 +1406,7 @@ jouerMorceau(index);
 }
 } else {
 // 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
+// On utilise des guillemets normaux et des signes + pour éviter tout bug de syntaxe
 const sauvegardeMorceau = localStorage.getItem("dernierMorceau_" + idAlbum);
 const sauvegardePosition = localStorage.getItem("dernierePosition_" + idAlbum);
 if (sauvegardeMorceau !== null) {
