@@ -1878,6 +1878,6 @@ async function chargerPremierMorceau(index, positionInitiale = 0) {
     } catch (erreur) {
         console.error("Impossible de préparer le morceau au démarrage :", erreur);
     }
-}
+} // <-- C'est cette accolade qui manquait !
 
 initialiserLecteur();
