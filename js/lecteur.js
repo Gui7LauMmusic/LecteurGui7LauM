@@ -785,7 +785,6 @@ async function jouerMorceau(index, conserverOrdreAleatoire = false) {
         audio.load();
 
         try {
-            try {
             await audio.play();
             boutonLecturePause.title = "Pause";
             boutonLecturePause.classList.remove("clignotant-alerte");
@@ -1090,794 +1089,582 @@ boutonRepetition.addEventListener(
             modeRepetition = "aucun";
 
             boutonRepetition.innerHTML = `
-    <svg viewBox="0 0 24 24" class="icone-commande">
-        <path d="M17 2l4 4-4 4"/>
-        <path d="M3 11V9a3 3 0 0 1 3-3h15"/>
-        <path d="M7 22l-4-4 4-4"/>
-        <path d="M21 13v2a3 3 0 0 1-3 3H3"/>
-        <path d="M5 5l14 14" stroke-width="3"/>
-    </svg>
 `;
-
-            boutonRepetition.classList.remove(
-                "actif"
-            );
-
-            boutonRepetition.classList.remove(
-                "repetition-liste"
-            );
-
-            boutonRepetition.title =
-                "Répétition désactivée";
-        }
-    }
+boutonRepetition.classList.remove(
+"actif"
 );
-
-
+boutonRepetition.classList.remove(
+"repetition-liste"
+);
+boutonRepetition.title =
+"Répétition désactivée";
+}
+}
+);
 /* =========================
-   FIN DU MORCEAU
-   ========================= */
-
+FIN DU MORCEAU
+========================= */
 audio.addEventListener(
-    "ended",
-    () => {
-        if (idAlbum) {
-            localStorage.removeItem(`dernierePosition_${idAlbum}`);
-        }
-        if (modeRepetition === "titre") {
-            audio.currentTime = 0;
-            audio.play();
-            return;
-        }
-        jouerSuivant();
-    }
+"ended",
+() => {
+if (idAlbum) {
+localStorage.removeItem(dernierePosition_${idAlbum});
+}
+if (modeRepetition === "titre") {
+audio.currentTime = 0;
+audio.play();
+return;
+}
+jouerSuivant();
+}
 );
-
-
 /* =========================
-   PROGRESSION
-   ========================= */
-
+PROGRESSION
+========================= */
 audio.addEventListener(
-    "timeupdate",
-    () => {
-        mettreAJourProgression();
-        // Sauvegarde le morceau actuel et la position en secondes (uniquement si l'album correspond)
-        if (morceauActuel !== -1 && idAlbum) {
-            localStorage.setItem(`dernierMorceau_${idAlbum}`, morceauActuel);
-            localStorage.setItem(`dernierePosition_${idAlbum}`, audio.currentTime);
-        }
-    }
+"timeupdate",
+() => {
+mettreAJourProgression();
+// Sauvegarde le morceau actuel et la position en secondes (uniquement si l'album correspond)
+if (morceauActuel !== -1 && idAlbum) {
+localStorage.setItem(dernierMorceau_${idAlbum}, morceauActuel);
+localStorage.setItem(dernierePosition_${idAlbum}, audio.currentTime);
+}
+}
 );
-
-
 function mettreAJourProgression() {
-
-    if (!audio.duration) {
-        return;
-    }
-
-    const pourcentage =
-        (audio.currentTime /
-            audio.duration) * 100;
-
-    progression.style.width =
-        pourcentage + "%";
-
-    tempsActuel.textContent =
-        formaterTemps(
-            audio.currentTime
-        );
-
-    dureeTotale.textContent =
-        formaterTemps(
-            audio.duration
-        );
+if (!audio.duration) {
+return;
 }
-
-
+const pourcentage =
+(audio.currentTime /
+audio.duration) * 100;
+progression.style.width =
+pourcentage + "%";
+tempsActuel.textContent =
+formaterTemps(
+audio.currentTime
+);
+dureeTotale.textContent =
+formaterTemps(
+audio.duration
+);
+}
 function formaterTemps(secondes) {
-
-    if (
-        !secondes ||
-        isNaN(secondes)
-    ) {
-        return "0:00";
-    }
-
-    const minutes =
-        Math.floor(
-            secondes / 60
-        );
-
-    const secondesRestantes =
-        Math.floor(
-            secondes % 60
-        )
-            .toString()
-            .padStart(2, "0");
-
-    return `${minutes}:${secondesRestantes}`;
+if (
+!secondes ||
+isNaN(secondes)
+) {
+return "0:00";
 }
-
-
+const minutes =
+Math.floor(
+secondes / 60
+);
+const secondesRestantes =
+Math.floor(
+secondes % 60
+)
+.toString()
+.padStart(2, "0");
+return ${minutes}:${secondesRestantes};
+}
 /* =========================
-   CLIC SUR LA BARRE
-   ========================= */
-
+CLIC SUR LA BARRE
+========================= */
 barreProgression.addEventListener(
-    "click",
-    event => {
-
-        if (!audio.duration) {
-            return;
-        }
-
-        const rectangle =
-            barreProgression
-                .getBoundingClientRect();
-
-        const position =
-            (
-                event.clientX -
-                rectangle.left
-            ) /
-            rectangle.width;
-
-        audio.currentTime =
-            position *
-            audio.duration;
-    }
+"click",
+event => {
+if (!audio.duration) {
+return;
+}
+const rectangle =
+barreProgression
+.getBoundingClientRect();
+const position =
+(
+event.clientX -
+rectangle.left
+) /
+rectangle.width;
+audio.currentTime =
+position *
+audio.duration;
+}
 );
-
-
 /* =========================
-   VOLUME
-   ========================= */
-
+VOLUME
+========================= */
 volume.addEventListener(
-    "input",
-    () => {
-
-        audio.volume =
-            volume.value;
-
-        if (audio.volume > 0) {
-            boutonMuet.textContent =
-                "🔊";
-        }
-    }
+"input",
+() => {
+audio.volume =
+volume.value;
+if (audio.volume > 0) {
+boutonMuet.textContent =
+"🔊";
+}
+}
 );
-
-
 /* =========================
-   MUET
-   ========================= */
-
+MUET
+========================= */
 boutonMuet.addEventListener(
-    "click",
-    () => {
-
-        if (audio.muted) {
-
-            audio.muted = false;
-
-            audio.volume =
-                volumeAvantMuet;
-
-            volume.value =
-                volumeAvantMuet;
-
-            boutonMuet.textContent =
-                "🔊";
-
-        } else {
-
-            volumeAvantMuet =
-                audio.volume;
-
-            audio.muted = true;
-
-            volume.value = 0;
-
-            boutonMuet.textContent =
-                "🔇";
-        }
-    }
+"click",
+() => {
+if (audio.muted) {
+audio.muted = false;
+audio.volume =
+volumeAvantMuet;
+volume.value =
+volumeAvantMuet;
+boutonMuet.textContent =
+"🔊";
+} else {
+volumeAvantMuet =
+audio.volume;
+audio.muted = true;
+volume.value = 0;
+boutonMuet.textContent =
+"🔇";
+}
+}
 );
-
-
 /* =========================
-   CLIC SUR LE DISQUE
-   ========================= */
-
+CLIC SUR LE DISQUE
+========================= */
 const disque =
-    document.querySelector(".disque");
-
+document.querySelector(".disque");
 disque.addEventListener(
-    "click",
-    () => {
-
-        if (morceauActuel === -1) {
-
-            const premierDisponible =
-                album.morceaux.findIndex(
-                    morceau =>
-                        estDisponible(morceau)
-                );
-
-            if (premierDisponible !== -1) {
-                jouerMorceau(
-                    premierDisponible
-                );
-            }
-
-            return;
-        }
-
-        if (audio.paused) {
-            audio.play();
-        } else {
-            audio.pause();
-        }
-    }
+"click",
+() => {
+if (morceauActuel === -1) {
+const premierDisponible =
+album.morceaux.findIndex(
+morceau =>
+estDisponible(morceau)
 );
-
-
+if (premierDisponible !== -1) {
+jouerMorceau(
+premierDisponible
+);
+}
+return;
+}
+if (audio.paused) {
+audio.play();
+} else {
+audio.pause();
+}
+}
+);
 /* =========================
-   ETAT LECTURE / PAUSE
-   ========================= */
-
+ETAT LECTURE / PAUSE
+========================= */
 audio.addEventListener(
-    "play",
-    () => {
-
-        boutonLecturePause.textContent =
-            "⏸";
-
-        boutonLecturePause.title =
-            "Pause";
-
-        rotationEnCours = true;
-
-        if (!animationDisque) {
-
-            animationDisque =
-                requestAnimationFrame(
-                    animerDisque
-                );
-        }
-    }
+"play",
+() => {
+boutonLecturePause.textContent =
+"⏸";
+boutonLecturePause.title =
+"Pause";
+rotationEnCours = true;
+if (!animationDisque) {
+animationDisque =
+requestAnimationFrame(
+animerDisque
 );
-
-
+}
+}
+);
 audio.addEventListener(
-    "pause",
-    () => {
-
-        boutonLecturePause.textContent =
-            "▶";
-
-        boutonLecturePause.title =
-            "Lecture";
-
-        rotationEnCours = false;
-    }
+"pause",
+() => {
+boutonLecturePause.textContent =
+"▶";
+boutonLecturePause.title =
+"Lecture";
+rotationEnCours = false;
+}
 );
-
-
 /* =========================
-   DUREE DU MORCEAU
-   ========================= */
-
+DUREE DU MORCEAU
+========================= */
 audio.addEventListener(
-    "loadedmetadata",
-    () => {
-
-        dureeTotale.textContent =
-            formaterTemps(
-                audio.duration
-            );
-    }
+"loadedmetadata",
+() => {
+dureeTotale.textContent =
+formaterTemps(
+audio.duration
 );
-
-
+}
+);
 async function chargerDureesDesMorceaux() {
-
-    const lignes =
-        document.querySelectorAll(
-            ".morceau.disponible"
-        );
-
-    const cache =
-        await caches.open(CACHE_AUDIO_NAME);
-
-    album.morceaux.forEach(
-        async (morceau, index) => {
-
-            if (!estDisponible(morceau)) {
-                return;
-            }
-
-            const ligne =
-                lignes[
-                    album.morceaux
-                        .slice(
-                            0,
-                            index + 1
-                        )
-                        .filter(
-                            m =>
-                                estDisponible(m)
-                        )
-                        .length - 1
-                ];
-
-            if (!ligne) {
-                return;
-            }
-
-            const fichierEnCache =
-                await cache.match(
-                    morceau.fichier
-                );
-
-            const audioTemporaire =
-                new Audio();
-
-            if (fichierEnCache) {
-
-                const blob =
-                    await fichierEnCache.blob();
-
-                const urlLocale =
-                    URL.createObjectURL(
-                        blob
-                    );
-
-                audioTemporaire.src =
-                    urlLocale;
-
-                audioTemporaire.addEventListener(
-                    "loadedmetadata",
-                    () => {
-
-                        const duree =
-                            ligne.querySelector(
-                                ".duree-morceau"
-                            );
-
-                        if (duree) {
-
-                            duree.textContent =
-                                formaterTemps(
-                                    audioTemporaire.duration
-                                );
-                        }
-
-                        URL.revokeObjectURL(
-                            urlLocale
-                        );
-                    }
-                );
-
-            } else {
-
-                audioTemporaire.src =
-                    morceau.fichier;
-
-                audioTemporaire.addEventListener(
-                    "loadedmetadata",
-                    () => {
-
-                        const duree =
-                            ligne.querySelector(
-                                ".duree-morceau"
-                            );
-
-                        if (duree) {
-
-                            duree.textContent =
-                                formaterTemps(
-                                    audioTemporaire.duration
-                                );
-                        }
-                    }
-                );
-            }
-        }
-    );
+const lignes =
+document.querySelectorAll(
+".morceau.disponible"
+);
+const cache =
+await caches.open(CACHE_AUDIO_NAME);
+album.morceaux.forEach(
+async (morceau, index) => {
+if (!estDisponible(morceau)) {
+return;
 }
-
+const ligne =
+lignes[
+album.morceaux
+.slice(
+0,
+index + 1
+)
+.filter(
+m =>
+estDisponible(m)
+)
+.length - 1
+];
+if (!ligne) {
+return;
+}
+const fichierEnCache =
+await cache.match(
+morceau.fichier
+);
+const audioTemporaire =
+new Audio();
+if (fichierEnCache) {
+const blob =
+await fichierEnCache.blob();
+const urlLocale =
+URL.createObjectURL(
+blob
+);
+audioTemporaire.src =
+urlLocale;
+audioTemporaire.addEventListener(
+"loadedmetadata",
+() => {
+const duree =
+ligne.querySelector(
+".duree-morceau"
+);
+if (duree) {
+duree.textContent =
+formaterTemps(
+audioTemporaire.duration
+);
+}
+URL.revokeObjectURL(
+urlLocale
+);
+}
+);
+} else {
+audioTemporaire.src =
+morceau.fichier;
+audioTemporaire.addEventListener(
+"loadedmetadata",
+() => {
+const duree =
+ligne.querySelector(
+".duree-morceau"
+);
+if (duree) {
+duree.textContent =
+formaterTemps(
+audioTemporaire.duration
+);
+}
+}
+);
+}
+}
+);
+}
 /* =========================
-   PAROLES
-   ========================= */
-
+PAROLES
+========================= */
 const fenetreParoles =
-    document.getElementById(
-        "fenetre-paroles"
-    );
-
+document.getElementById(
+"fenetre-paroles"
+);
 const titreParoles =
-    document.getElementById(
-        "titre-paroles"
-    );
-
+document.getElementById(
+"titre-paroles"
+);
 const texteParoles =
-    document.getElementById(
-        "texte-paroles"
-    );
-
+document.getElementById(
+"texte-paroles"
+);
 const fermerParoles =
-    document.getElementById(
-        "fermer-paroles"
-    );
-
-
+document.getElementById(
+"fermer-paroles"
+);
 boutonParolesActuelles.addEventListener(
-    "click",
-    async () => {
-
-        const index =
-            morceauActuel;
-
-        if (index === -1) {
-            return;
-        }
-
-        const morceau =
-            album.morceaux[index];
-
-        let nomFichier =
-            morceau.titre;
-
-        if (
-            idAlbum ===
-            "elle-est-moi-acoustique"
-        ) {
-
-            nomFichier +=
-                " (version acoustique)";
-        }
-
-        const chemin =
-            `paroles/${idArtiste}/${album.titre}/${String(index + 1).padStart(2, "0")} - ${nomFichier}.txt`;
-
-        try {
-
-            const reponse =
-                await fetch(chemin);
-
-            if (!reponse.ok) {
-
-                throw new Error(
-                    "Fichier de paroles introuvable"
-                );
-            }
-
-            const paroles =
-                await reponse.text();
-
-            titreParoles.textContent =
-                morceau.titre;
-
-            texteParoles.textContent =
-                paroles;
-
-            fenetreParoles.classList.add(
-                "ouverte"
-            );
-
-        } catch (erreur) {
-
-            console.error(erreur);
-
-            texteParoles.textContent =
-                "Impossible de charger les paroles.";
-
-            fenetreParoles.classList.add(
-                "ouverte"
-            );
-        }
-    }
+"click",
+async () => {
+const index =
+morceauActuel;
+if (index === -1) {
+return;
+}
+const morceau =
+album.morceaux[index];
+let nomFichier =
+morceau.titre;
+if (
+idAlbum ===
+"elle-est-moi-acoustique"
+) {
+nomFichier +=
+" (version acoustique)";
+}
+const chemin =
+paroles/${idArtiste}/${album.titre}/${String(index + 1).padStart(2, "0")} - ${nomFichier}.txt;
+try {
+const reponse =
+await fetch(chemin);
+if (!reponse.ok) {
+throw new Error(
+"Fichier de paroles introuvable"
 );
-
-
+}
+const paroles =
+await reponse.text();
+titreParoles.textContent =
+morceau.titre;
+texteParoles.textContent =
+paroles;
+fenetreParoles.classList.add(
+"ouverte"
+);
+} catch (erreur) {
+console.error(erreur);
+texteParoles.textContent =
+"Impossible de charger les paroles.";
+fenetreParoles.classList.add(
+"ouverte"
+);
+}
+}
+);
 fermerParoles.addEventListener(
-    "click",
-    () => {
-
-        fenetreParoles.classList.remove(
-            "ouverte"
-        );
-    }
+"click",
+() => {
+fenetreParoles.classList.remove(
+"ouverte"
 );
-
-
+}
+);
 fenetreParoles.addEventListener(
-    "click",
-    event => {
-
-        if (
-            event.target ===
-            fenetreParoles
-        ) {
-
-            fenetreParoles.classList.remove(
-                "ouverte"
-            );
-        }
-    }
+"click",
+event => {
+if (
+event.target ===
+fenetreParoles
+) {
+fenetreParoles.classList.remove(
+"ouverte"
 );
-
+}
+}
+);
 /* =========================
-   PARTAGE
-   ========================= */
-
+PARTAGE
+========================= */
 if (boutonPartager) {
-
-    boutonPartager.addEventListener(
-        "click",
-        async () => {
-
-            const urlPartage = new URL(window.location.href);
-            urlPartage.hash = "";
-            ["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
-                urlPartage.searchParams.delete(parametre)
-            );
-
-            let titre = album.titre;
-            let texte = `Écoute "${album.titre}" par ${artiste.nom}`;
-
-            if (
-                morceauActuel >= 0 &&
-                album.morceaux[morceauActuel]
-            ) {
-
-                const morceau =
-                    album.morceaux[morceauActuel];
-
-                urlPartage.searchParams.set(
-                    "morceau",
-                    morceauActuel
-                );
-
-                titre = morceau.titre;
-
-                texte =
-                    `Écoute "${morceau.titre}" par ${artiste.nom}`;
-
-            } else {
-
-                urlPartage.searchParams.delete(
-                    "morceau"
-                );
-
-            }
-
-            const url = urlPartage.href;
-
-            if (navigator.share) {
-
-                try {
-
-                    await navigator.share({
-                        title: titre,
-                        text: texte,
-                        url: url
-                    });
-
-                } catch (erreur) {
-
-                    if (erreur.name !== "AbortError") {
-
-                        console.error(
-                            "Erreur lors du partage :",
-                            erreur
-                        );
-
-                    }
-                }
-
-            } else {
-
-                try {
-
-                    await navigator.clipboard.writeText(url);
-
-                    alert(
-                        "Lien copié dans le presse-papiers."
-                    );
-
-                } catch (erreur) {
-
-                    console.error(
-                        "Impossible de copier le lien :",
-                        erreur
-                    );
-
-                }
-
-            }
-
-        }
-    );
-
+boutonPartager.addEventListener(
+"click",
+async () => {
+const urlPartage = new URL(window.location.href);
+urlPartage.hash = "";
+["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
+urlPartage.searchParams.delete(parametre)
+);
+let titre = album.titre;
+let texte = Écoute "${album.titre}" par ${artiste.nom};
+if (
+morceauActuel >= 0 &&
+album.morceaux[morceauActuel]
+) {
+const morceau =
+album.morceaux[morceauActuel];
+urlPartage.searchParams.set(
+"morceau",
+morceauActuel
+);
+titre = morceau.titre;
+texte =
+Écoute "${morceau.titre}" par ${artiste.nom};
+} else {
+urlPartage.searchParams.delete(
+"morceau"
+);
 }
-
+const url = urlPartage.href;
+if (navigator.share) {
+try {
+await navigator.share({
+title: titre,
+text: texte,
+url: url
+});
+} catch (erreur) {
+if (erreur.name !== "AbortError") {
+console.error(
+"Erreur lors du partage :",
+erreur
+);
+}
+}
+} else {
+try {
+await navigator.clipboard.writeText(url);
+alert(
+"Lien copié dans le presse-papiers."
+);
+} catch (erreur) {
+console.error(
+"Impossible de copier le lien :",
+erreur
+);
+}
+}
+}
+);
+}
 /* =========================
-   PARTAGE DE L'ALBUM
-   ========================= */
-
+PARTAGE DE L'ALBUM
+========================= */
 const boutonPartagerAlbum =
-    document.getElementById("partager-album");
-
+document.getElementById("partager-album");
 if (boutonPartagerAlbum) {
-
-    boutonPartagerAlbum.addEventListener(
-        "click",
-        async (event) => {
-
-            event.preventDefault();
-
-            const urlPartage = new URL(window.location.href);
-            urlPartage.hash = "";
-            ["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
-                urlPartage.searchParams.delete(parametre)
-            );
-            urlPartage.searchParams.delete("morceau");
-
-            const url = urlPartage.href;
-
-            const titre = album.titre;
-
-            const texte =
-                `Écoute l'album "${album.titre}" par ${artiste.nom}`;
-
-            if (navigator.share) {
-
-                try {
-
-                    await navigator.share({
-                        title: titre,
-                        text: texte,
-                        url: url
-                    });
-
-                } catch (erreur) {
-
-                    if (erreur.name !== "AbortError") {
-                        console.error(
-                            "Erreur lors du partage de l'album :",
-                            erreur
-                        );
-                    }
-                }
-
-            } else {
-
-                try {
-
-                    await navigator.clipboard.writeText(url);
-
-                    alert(
-                        "Lien de l'album copié dans le presse-papiers."
-                    );
-
-                } catch (erreur) {
-
-                    console.error(
-                        "Impossible de copier le lien de l'album :",
-                        erreur
-                    );
-                }
-            }
-        }
-    );
+boutonPartagerAlbum.addEventListener(
+"click",
+async (event) => {
+event.preventDefault();
+const urlPartage = new URL(window.location.href);
+urlPartage.hash = "";
+["fbclid", "gclid", "mc_cid", "mc_eid"].forEach(parametre =>
+urlPartage.searchParams.delete(parametre)
+);
+urlPartage.searchParams.delete("morceau");
+const url = urlPartage.href;
+const titre = album.titre;
+const texte =
+Écoute l'album "${album.titre}" par ${artiste.nom};
+if (navigator.share) {
+try {
+await navigator.share({
+title: titre,
+text: texte,
+url: url
+});
+} catch (erreur) {
+if (erreur.name !== "AbortError") {
+console.error(
+"Erreur lors du partage de l'album :",
+erreur
+);
 }
-
+}
+} else {
+try {
+await navigator.clipboard.writeText(url);
+alert(
+"Lien de l'album copié dans le presse-papiers."
+);
+} catch (erreur) {
+console.error(
+"Impossible de copier le lien de l'album :",
+erreur
+);
+}
+}
+}
+);
+}
 /* =========================
-   BOUTON ALBUM
-   ========================= */
-
+BOUTON ALBUM
+========================= */
 if (boutonTelechargerAlbum) {
-
-    boutonTelechargerAlbum.addEventListener(
-        "click",
-        telechargerAlbum
-    );
+boutonTelechargerAlbum.addEventListener(
+"click",
+telechargerAlbum
+);
 }
-
-
 /* =========================
-   INITIALISATION
-   ========================= */
-
+INITIALISATION
+========================= */
 async function initialiserLecteur() {
-
-    await afficherMorceaux();
-
-    chargerDureesDesMorceaux();
-
-    const indexMorceau = parametres.get("morceau");
-
-    if (indexMorceau !== null) {
-        // 1. Priorité absolue : un morceau spécifique a été demandé via un lien partagé
-        const index = Number(indexMorceau);
-
-        if (
-            Number.isInteger(index) &&
-            index >= 0 &&
-            index < album.morceaux.length &&
-            estDisponible(album.morceaux[index])
-        ) {
-            jouerMorceau(index);
-        }
-    } else {
-        // 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
-        const sauvegardeMorceau = localStorage.getItem(`dernierMorceau_${idAlbum}`);
-        const sauvegardePosition = localStorage.getItem(`dernierePosition_${idAlbum}`);
-
-        if (sauvegardeMorceau !== null) {
-            const indexSauvegarde = Number(sauvegardeMorceau);
-            const positionSauvegarde = sauvegardePosition ? Number(sauvegardePosition) : 0;
-
-            if (indexSauvegarde >= 0 && indexSauvegarde < album.morceaux.length && estDisponible(album.morceaux[indexSauvegarde])) {
-                // On recharge le morceau et la position exacte où il s'était arrêté
-                chargerPremierMorceau(indexSauvegarde, positionSauvegarde);
-                return;
-            }
-        }
-
-        // 3. Secours : si aucun historique, on charge le tout premier morceau disponible de l'album
-        let premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
-        if (premierDisponible !== -1) {
-            chargerPremierMorceau(premierDisponible, 0);
-        }
-    }
+await afficherMorceaux();
+chargerDureesDesMorceaux();
+const indexMorceau = parametres.get("morceau");
+if (indexMorceau !== null) {
+// 1. Priorité absolue : un morceau spécifique a été demandé via un lien partagé
+const index = Number(indexMorceau);
+if (
+Number.isInteger(index) &&
+index >= 0 &&
+index < album.morceaux.length &&
+estDisponible(album.morceaux[index])
+) {
+jouerMorceau(index);
 }
-
+} else {
+// 2. Pas de lien partagé : on regarde si l'utilisateur s'était arrêté quelque part sur cet album
+const sauvegardeMorceau = localStorage.getItem(dernierMorceau_${idAlbum});
+const sauvegardePosition = localStorage.getItem(dernierePosition_${idAlbum});
+if (sauvegardeMorceau !== null) {
+const indexSauvegarde = Number(sauvegardeMorceau);
+const positionSauvegarde = sauvegardePosition ? Number(sauvegardePosition) : 0;
+if (indexSauvegarde >= 0 && indexSauvegarde < album.morceaux.length && estDisponible(album.morceaux[indexSauvegarde])) {
+// On recharge le morceau et la position exacte où il s'était arrêté
+chargerPremierMorceau(indexSauvegarde, positionSauvegarde);
+return;
+}
+}
+// 3. Secours : si aucun historique, on charge le tout premier morceau disponible de l'album
+let premierDisponible = album.morceaux.findIndex(morceau => estDisponible(morceau));
+if (premierDisponible !== -1) {
+chargerPremierMorceau(premierDisponible, 0);
+}
+}
+}
 // Fonction pour préparer un morceau en arrière-plan (sans forcer la lecture audio) au démarrage
 async function chargerPremierMorceau(index, positionInitiale = 0) {
-    const morceau = album.morceaux[index];
-    if (!estDisponible(morceau)) return;
-
-    morceauActuel = index;
-    synchroniserPositionAleatoire(index, true);
-    morceauActuelElement.textContent = morceau.titre;
-    boutonParolesActuelles.dataset.index = index;
-
-    try {
-        const cache = await caches.open(CACHE_AUDIO_NAME);
-        const fichierEnCache = await cache.match(morceau.fichier);
-        const horsLigne = !navigator.onLine;
-
-        if (horsLigne && !fichierEnCache) return;
-
-        if (fichierEnCache) {
-            if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
-            const blob = await fichierEnCache.blob();
-            audio._urlLocale = URL.createObjectURL(blob);
-            audio.src = audio._urlLocale;
-        } else {
-            audio.src = morceau.fichier;
-        }
-        
-        audio.load();
-        
-        // On applique la position sauvegardée dès que les métadonnées de la chanson sont prêtes
-        if (positionInitiale > 0) {
-            audio.addEventListener('loadedmetadata', function positionner() {
-                audio.currentTime = positionInitiale;
-                mettreAJourProgression();
-                audio.removeEventListener('loadedmetadata', positionner);
-            });
-        }
-
-        mettreAJourSelection();
-    } catch (erreur) {
-        console.error("Impossible de préparer le morceau au démarrage :", erreur);
-    }
-} // <-- C'est cette accolade qui manquait !
-
+const morceau = album.morceaux[index];
+if (!estDisponible(morceau)) return;
+morceauActuel = index;
+synchroniserPositionAleatoire(index, true);
+morceauActuelElement.textContent = morceau.titre;
+boutonParolesActuelles.dataset.index = index;
+try {
+const cache = await caches.open(CACHE_AUDIO_NAME);
+const fichierEnCache = await cache.match(morceau.fichier);
+const horsLigne = !navigator.onLine;
+if (horsLigne && !fichierEnCache) return;
+if (fichierEnCache) {
+if (audio._urlLocale) URL.revokeObjectURL(audio._urlLocale);
+const blob = await fichierEnCache.blob();
+audio._urlLocale = URL.createObjectURL(blob);
+audio.src = audio._urlLocale;
+} else {
+audio.src = morceau.fichier;
+}
+audio.load();
+// On applique la position sauvegardée dès que les métadonnées de la chanson sont prêtes
+if (positionInitiale > 0) {
+audio.addEventListener('loadedmetadata', function positionner() {
+audio.currentTime = positionInitiale;
+mettreAJourProgression();
+audio.removeEventListener('loadedmetadata', positionner);
+});
+}
+mettreAJourSelection();
+} catch (erreur) {
+console.error("Impossible de préparer le morceau au démarrage :", erreur);
+}
+}
 initialiserLecteur();
